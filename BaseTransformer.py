@@ -128,7 +128,7 @@ class TimeTokenEmbedding(nn.Module):
         return x
 
 @dataclass
-class VanillaTimeTransformerConfig: 
+class BaseTimeTransformerConfig: 
     # TODO update the default hyperparameters
     block_size: int = 1024 # the length of the input
     # vocab_size: int = 50304 # GPT-2 vocab_size of 50257, padded up to nearest multiple of 64 for efficiency
@@ -139,7 +139,7 @@ class VanillaTimeTransformerConfig:
     dropout: float = 0.0
     bias: bool = False # True: bias in Linears and LayerNorms, like GPT-2. False: a bit better and faster
 
-class VanillaTimeTransformer(nn.Module):
+class BaseTimeTransformer(nn.Module):
     """
     Transformer based model designed for continuous time series data
     Predicts horizon_len amount of consequtive time sequences 
