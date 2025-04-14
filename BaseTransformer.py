@@ -1,4 +1,6 @@
 """
+Transformer architecture adapted for time-series data
+
 Adapted from GPT2 and Nixtla
 References:
 https://github.com/karpathy/nanoGPT/blob/master/model.py
