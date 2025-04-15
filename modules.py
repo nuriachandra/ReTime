@@ -82,8 +82,7 @@ class MLP(nn.Module):
         x = self.dropout(x)
         return x
 
-class TransformerBlock(nn.Module):
-
+class Block(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.ln_1 = LayerNorm(config.n_embd, bias=config.bias)
@@ -94,4 +93,29 @@ class TransformerBlock(nn.Module):
     def forward(self, x):
         x = x + self.attn(self.ln_1(x))
         x = x + self.mlp(self.ln_2(x))
+        return x
+    
+class TimeTokenEmbedding(nn.Module):
+    """
+    Time token embedding class adapted from https://github.com/Nixtla/neuralforecast/blob/main/neuralforecast/common/_modules.py
+    """
+    def __init__(self, c_in, hidden_size):
+        super(TimeTokenEmbedding, self).__init__()
+        padding = 1 if torch.__version__ >= "1.5.0" else 2
+        self.tokenConv = nn.Conv1d(
+            in_channels=c_in,
+            out_channels=hidden_size,
+            kernel_size=3,
+            padding=padding,
+            padding_mode="circular",
+            bias=False,
+        )
+        for m in self.modules():
+            if isinstance(m, nn.Conv1d):
+                nn.init.kaiming_normal_(
+                    m.weight, mode="fan_in", nonlinearity="leaky_relu"
+                )
+
+    def forward(self, x):
+        x = self.tokenConv(x.permute(0, 2, 1)).transpose(1, 2)
         return x

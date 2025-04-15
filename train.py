@@ -18,7 +18,7 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-from BaseTransformer import BaseTimeTransformer, BaseTimeTransformerConfig
+from models import BaseTimeTransformer, BaseTimeTransformerConfig
 from utils import load_data, create_data_loaders
 
 def set_seed(seed):
