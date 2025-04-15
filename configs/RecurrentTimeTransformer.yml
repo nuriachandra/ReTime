@@ -1,4 +1,4 @@
-# Configuration file for training BaseTimeTransformer model
+# Configuration file for training RecurrentTimeTransformer model
 
 # Data configuration
 data_path: "data/synthetic_data/constant_series1.npy"  # Path to the time series data
@@ -8,9 +8,9 @@ val_ratio: 0.15                    # Ratio of data for validation
 # test_ratio is 1 - train_ratio - val_ratio
 
 # Model configuration
-model_type: 'BaseTimeTransformer'
+model_type: 'RecurrentTimeTransformer'
 block_size: 104                    # Sequence length (input window size)
-n_layer: 3                         # Number of transformer layers
+max_recurrence: 10                         # Number of transformer layers
 n_head: 4                          # Number of attention heads
 n_embd: 512                        # Embedding dimension
 h: 2                               # Horizon length (prediction steps)
@@ -18,7 +18,7 @@ dropout: 0                         # Dropout rate
 bias: true                         # Whether to use bias in Linear layers
 
 # Training configuration
-output_dir: "experiments/synthetic/BaseTimeTransformer1_constant_series1"               # Directory to save outputs
+output_dir: "experiments/synthetic/RecurrentTimeTransformer1_constant_series1"               # Directory to save outputs
 seed: 42                           # Random seed for reproducibility
 use_gpu: true                      # Whether to use GPU for training
 batch_size: 20                     # Batch size

@@ -18,8 +18,7 @@ import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-from models import BaseTimeTransformer, BaseTimeTransformerConfig
-from utils import load_data, create_data_loaders
+from utils import load_data, create_data_loaders, create_model
 
 def set_seed(seed):
     np.random.seed(seed)
@@ -28,7 +27,7 @@ def set_seed(seed):
         torch.cuda.manual_seed_all(seed)
 
 
-# Training function
+# TODO refactor this training function
 def train(model, train_loader, val_loader, config, device):
     # Set up output directory
     output_dir = config.get('output_dir', 'output')
@@ -245,20 +244,9 @@ def main():
     print("Creating data loaders...")
     train_loader, val_loader, test_loader = create_data_loaders(train_data, val_data, test_data, config_dict)
     
-    # Create model configuration
-    model_config = BaseTimeTransformerConfig(
-        block_size=config_dict.get('block_size', 1024),
-        n_layer=config_dict.get('n_layer', 12),
-        n_head=config_dict.get('n_head', 12),
-        n_embd=config_dict.get('n_embd', 768),
-        h=config_dict.get('h', 2),
-        dropout=config_dict.get('dropout', 0.0),
-        bias=config_dict.get('bias', False)
-    )
-    
     # Create model
     print("Creating model...")
-    model = BaseTimeTransformer(model_config)
+    model = create_model(config_dict=config_dict)
     model = model.to(device)
     
     # Print model summary

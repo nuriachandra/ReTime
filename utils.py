@@ -6,6 +6,8 @@ from typing import List, Optional, Tuple
 import json
 import os
 
+from models import BaseTimeTransformer, BaseTimeTransformerConfig, RecurrentTimeTransformer, RecurrentTimeTransformerConfig
+
 """
 This file contains modules for processing and loading time series data for use in transformer models 
 """
@@ -113,3 +115,37 @@ def create_data_loaders(train_data, val_data, test_data, config):
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     
     return train_loader, val_loader, test_loader
+
+
+def create_model(config_dict):
+    """
+    Factory function to create a model based on configuration
+    """
+    model_type = config_dict.get('model_type')
+    
+    if model_type == 'BaseTimeTransformer':
+        model_config = BaseTimeTransformerConfig(
+            block_size=config_dict.get('block_size'),
+            n_layer=config_dict.get('n_layer'),
+            n_head=config_dict.get('n_head'),
+            n_embd=config_dict.get('n_embd'),
+            h=config_dict.get('h'),
+            dropout=config_dict.get('dropout'),
+            bias=config_dict.get('bias')
+        )
+        return BaseTimeTransformer(model_config)
+    
+    elif model_type == 'RecurrentTimeTransformer':
+        model_config = RecurrentTimeTransformerConfig(
+            block_size=config_dict.get('block_size'),
+            max_recurrence=config_dict.get('max_recurrence'),
+            n_head=config_dict.get('n_head'),
+            n_embd=config_dict.get('n_embd'),
+            h=config_dict.get('h'),
+            dropout=config_dict.get('dropout'),
+            bias=config_dict.get('bias')
+        )
+        return RecurrentTimeTransformer(model_config)
+    
+    else:
+        raise ValueError(f"Unknown model type: {model_type}")
