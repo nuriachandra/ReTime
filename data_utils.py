@@ -16,6 +16,7 @@ class TimeSeriesDataset(Dataset):
     def __init__(
         self, 
         timeData: np.ndarray, # shape: n x time series length. Currently only supports time series data of all the same length
+        h: int # horizon length. The size of labels produced by the __getitem__ method
     ):
         """
         Args:
@@ -24,6 +25,7 @@ class TimeSeriesDataset(Dataset):
         # Convert to numpy array if it's a list
         self.tokens = timeData 
         self.block_size = timeData.shape[-1]
+        self.h=h
         print(self.block_size) # TODO delete
         
     def __len__(self):
@@ -35,9 +37,9 @@ class TimeSeriesDataset(Dataset):
         chunk = self.tokens[idx]
         
         # The input is all tokens except the last one
-        x = torch.from_numpy(chunk[:-1].astype(np.int64))
+        x = torch.from_numpy(chunk[:-self.h].astype(np.float32))
         
         # The target is all tokens except the first one (shifted by 1)
-        y = torch.from_numpy(chunk[1:].astype(np.int64))
+        y = torch.from_numpy(chunk[-self.h:].astype(np.float32))
         
         return x, y
