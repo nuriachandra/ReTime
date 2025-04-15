@@ -1,5 +1,6 @@
 """
-Transformer architecture adapted for time-series data
+This file contains the definitions of transformer architecture adapted for time-series data
+For implementations of the components which form these models please see modules.py
 
 Adapted from GPT2 and Nixtla
 References:
