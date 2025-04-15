@@ -3,6 +3,9 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from typing import List, Optional, Tuple
 
+import json
+import os
+
 """
 This file contains modules for processing and loading time series data for use in transformer models 
 """
@@ -38,9 +41,11 @@ class TimeSeriesDataset(Dataset):
         
         # The input is all tokens except the last one
         x = torch.from_numpy(chunk[:-self.h].astype(np.float32))
+        print('shape of x is', x.size())
         
         # The target is all tokens except the first one (shifted by 1)
         y = torch.from_numpy(chunk[-self.h:].astype(np.float32))
+        print('shape of y is', y.size())
         
         return x, y
 
@@ -92,39 +97,18 @@ def load_data(config):
     train_data = data[:train_size]
     val_data = data[train_size:train_size+val_size]
     test_data = data[train_size+val_size:]
-    
+    print('shape of train data', train_data.shape)
     return train_data, val_data, test_data
 
 # Create data loaders
 def create_data_loaders(train_data, val_data, test_data, config):
-    batch_size = config.get('batch_size', 32)
-    horizon_length = config.get('h', 2)
-    
-    # Prepare data in the format expected by your TimeSeriesDataset
-    # Note: Your dataset expects the shape to be n x time_series_length
-    # We need to create sequences from the continuous time series data
-    
-    def create_sequences(data, seq_length, horizon_length):
-        """Create sequences for the dataset from continuous time series data"""
-        sequences = []
-        for i in range(len(data) - seq_length - horizon_length + 1):
-            # Extract a sequence that includes both input and target
-            seq = data[i:i+seq_length+horizon_length]
-            sequences.append(seq)
-        return np.array(sequences)
-    
-    # Get sequence length from config
-    seq_length = config.get('block_size', 1024)
-    
-    # Create sequences
-    train_sequences = create_sequences(train_data, seq_length, horizon_length)
-    val_sequences = create_sequences(val_data, seq_length, horizon_length)
-    test_sequences = create_sequences(test_data, seq_length, horizon_length)
-    
+    batch_size = config.get('batch_size')
+    horizon_length = config.get('h')
+
     # Create datasets
-    train_dataset = TimeSeriesDataset(train_sequences, horizon_length)
-    val_dataset = TimeSeriesDataset(val_sequences, horizon_length)
-    test_dataset = TimeSeriesDataset(test_sequences, horizon_length)
+    train_dataset = TimeSeriesDataset(train_data, horizon_length)
+    val_dataset = TimeSeriesDataset(val_data, horizon_length)
+    test_dataset = TimeSeriesDataset(test_data, horizon_length)
     
     # Create data loaders
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)

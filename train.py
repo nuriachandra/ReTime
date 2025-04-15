@@ -19,7 +19,7 @@ from torch.utils.data import Dataset, DataLoader
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from BaseTransformer import BaseTimeTransformer, BaseTimeTransformerConfig
-from utils import TimeSeriesDataset, load_data, create_data_loaders
+from utils import load_data, create_data_loaders
 
 def set_seed(seed):
     np.random.seed(seed)
@@ -66,8 +66,7 @@ def train(model, train_loader, val_loader, config, device):
         train_loss = 0.0
         train_batches = 0
         
-        progress_bar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs} [Train]")
-        for x_batch, y_batch in progress_bar:
+        for x_batch, y_batch in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs} [Train]"):
             # Move to device
             x_batch, y_batch = x_batch.to(device), y_batch.to(device)
             

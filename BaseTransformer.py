@@ -151,6 +151,7 @@ class BaseTimeTransformer(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
+        self.block_size = config.block_size
 
         self.input_embedding = TimeTokenEmbedding(c_in=1, hidden_size=config.n_embd)
         self.pos_emb = nn.Embedding(config.block_size, config.n_embd) # Learned positional embeddings (GPT-2 style)
@@ -158,7 +159,7 @@ class BaseTimeTransformer(nn.Module):
         self.drop = nn.Dropout(config.dropout)
         self.attention_blocks = nn.ModuleList([Block(config) for _ in range(config.n_layer)])
         self.ln_f = LayerNorm(config.n_embd, bias=config.bias)
-        self.output_proj1 = nn.Linear(self.n_embd, 1)
+        self.output_proj1 = nn.Linear(config.n_embd, 1)
         self.output_proj2 = nn.Linear(config.block_size, config.h)
 
     def forward(self, x):
