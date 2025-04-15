@@ -29,7 +29,6 @@ class TimeSeriesDataset(Dataset):
         self.tokens = timeData 
         self.block_size = timeData.shape[-1]
         self.h=h
-        print(self.block_size) # TODO delete
         
     def __len__(self):
         # Return the number of possible training examples
@@ -41,11 +40,9 @@ class TimeSeriesDataset(Dataset):
         
         # The input is all tokens except the last one
         x = torch.from_numpy(chunk[:-self.h].astype(np.float32))
-        print('shape of x is', x.size())
         
         # The target is all tokens except the first one (shifted by 1)
         y = torch.from_numpy(chunk[-self.h:].astype(np.float32))
-        print('shape of y is', y.size())
         
         return x, y
 

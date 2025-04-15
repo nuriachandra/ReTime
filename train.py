@@ -66,7 +66,8 @@ def train(model, train_loader, val_loader, config, device):
         train_loss = 0.0
         train_batches = 0
         
-        for x_batch, y_batch in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs} [Train]"):
+        progress_bar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs} [Train]")
+        for x_batch, y_batch in progress_bar:
             # Move to device
             x_batch, y_batch = x_batch.to(device), y_batch.to(device)
             
@@ -165,6 +166,49 @@ def train(model, train_loader, val_loader, config, device):
     return history
 
 
+def evaluate(model, test_loader, device):
+    model.eval()
+    criterion = nn.MSELoss()
+    
+    test_loss = 0.0
+    test_batches = 0
+    all_predictions = []
+    all_targets = []
+    
+    with torch.no_grad():
+        for x_batch, y_batch in tqdm(test_loader, desc="Evaluating"):
+            # Move to device
+            x_batch, y_batch = x_batch.to(device), y_batch.to(device)
+            
+            # Forward pass
+            y_pred = model(x_batch)
+            loss = criterion(y_pred, y_batch)
+            
+            # Update metrics
+            test_loss += loss.item()
+            test_batches += 1
+            
+            all_predictions.append(y_pred.cpu().numpy())
+            all_targets.append(y_batch.cpu().numpy())
+    
+    avg_test_loss = test_loss / test_batches
+    print(f"Test Loss: {avg_test_loss:.6f}")
+    
+    # Concatenate all predictions and targets
+    all_predictions = np.concatenate(all_predictions, axis=0)
+    all_targets = np.concatenate(all_targets, axis=0)
+    
+    # Calculate MSE for each horizon step
+    horizon_mse = np.mean((all_predictions - all_targets) ** 2, axis=0)
+    for h, mse in enumerate(horizon_mse):
+        print(f"Horizon {h+1} MSE: {mse:.6f}")
+    
+    return {
+        'test_loss': avg_test_loss,
+        'horizon_mse': horizon_mse.tolist()
+    }
+
+
 def main():
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Train BaseTimeTransformer model')
@@ -229,9 +273,17 @@ def main():
     # Load the best model for evaluation
     checkpoint = torch.load(os.path.join(output_dir, 'best_model.pth'))
     model.load_state_dict(checkpoint['model_state_dict'])
+
+        # Evaluate the model
+    print("Evaluating model...")
+    eval_results = evaluate(model, test_loader, device)
     
+    # Save evaluation results
+    with open(os.path.join(output_dir, 'evaluation_results.json'), 'w') as f:
+        json.dump(eval_results, f)
+
     
-    print("Training completed!")
+    print("Training and evaluation completed!")
     print(f"All outputs saved to {output_dir}")
 
 if __name__ == "__main__":

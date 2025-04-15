@@ -163,8 +163,9 @@ class BaseTimeTransformer(nn.Module):
         self.output_proj2 = nn.Linear(config.block_size, config.h)
 
     def forward(self, x):
-        # x shape: [batch_size, seq_length, input_dim]
-        b, t, _ = x.size()
+        # x shape: [batch_size, seq_length] 
+        b, t = x.size()
+        x = torch.unsqueeze(x, -1) # [batch_size, seq_length, 1] 
         assert t <= self.block_size, f"Cannot forward sequence of length {t}, block size is only {self.block_size}"
         
         device = x.device
