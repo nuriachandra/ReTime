@@ -19,7 +19,7 @@ from torch.utils.data import Dataset, DataLoader
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from BaseTransformer import BaseTimeTransformer, BaseTimeTransformerConfig
-from data_utils import TimeSeriesDataset
+from utils import TimeSeriesDataset, load_data, create_data_loaders
 
 def set_seed(seed):
     np.random.seed(seed)
@@ -27,93 +27,6 @@ def set_seed(seed):
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
 
-def load_data(config):
-    """
-    Load and preprocess data according to configuration.
-    This is a simple implementation - modify according to your data source.
-    """
-    data_path = config.get('data_path', 'data/time_series.npy')
-    
-    # Check if data exists
-    if not os.path.exists(data_path):
-        raise FileNotFoundError(f"Data file not found: {data_path}")
-    
-    # Load data
-    data = np.load(data_path)
-    
-    # Ensure data is float32 for model compatibility
-    if data.dtype != np.float32:
-        data = data.astype(np.float32)
-    
-    # Normalize data if specified
-    if config.get('normalize_data', True):
-        # Simple min-max normalization
-        data_min = data.min()
-        data_max = data.max()
-        data = (data - data_min) / (data_max - data_min)
-        
-        # Create output dir if it doesn't exist
-        os.makedirs(config.get('output_dir', 'output'), exist_ok=True)
-        
-        # Save normalization parameters for inference
-        norm_params = {
-            'data_min': float(data_min),
-            'data_max': float(data_max)
-        }
-        with open(os.path.join(config.get('output_dir', 'output'), 'norm_params.json'), 'w') as f:
-            json.dump(norm_params, f)
-    
-    # Split data into train, validation, and test sets
-    train_ratio = config.get('train_ratio', 0.7)
-    val_ratio = config.get('val_ratio', 0.15)
-    # test_ratio = 1 - train_ratio - val_ratio
-    
-    train_size = int(len(data) * train_ratio)
-    val_size = int(len(data) * val_ratio)
-    
-    train_data = data[:train_size]
-    val_data = data[train_size:train_size+val_size]
-    test_data = data[train_size+val_size:]
-    
-    return train_data, val_data, test_data
-
-# Create data loaders
-def create_data_loaders(train_data, val_data, test_data, config):
-    batch_size = config.get('batch_size', 32)
-    horizon_length = config.get('h', 2)
-    
-    # Prepare data in the format expected by your TimeSeriesDataset
-    # Note: Your dataset expects the shape to be n x time_series_length
-    # We need to create sequences from the continuous time series data
-    
-    def create_sequences(data, seq_length, horizon_length):
-        """Create sequences for the dataset from continuous time series data"""
-        sequences = []
-        for i in range(len(data) - seq_length - horizon_length + 1):
-            # Extract a sequence that includes both input and target
-            seq = data[i:i+seq_length+horizon_length]
-            sequences.append(seq)
-        return np.array(sequences)
-    
-    # Get sequence length from config
-    seq_length = config.get('block_size', 1024)
-    
-    # Create sequences
-    train_sequences = create_sequences(train_data, seq_length, horizon_length)
-    val_sequences = create_sequences(val_data, seq_length, horizon_length)
-    test_sequences = create_sequences(test_data, seq_length, horizon_length)
-    
-    # Create datasets
-    train_dataset = TimeSeriesDataset(train_sequences, horizon_length)
-    val_dataset = TimeSeriesDataset(val_sequences, horizon_length)
-    test_dataset = TimeSeriesDataset(test_sequences, horizon_length)
-    
-    # Create data loaders
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-    
-    return train_loader, val_loader, test_loader
 
 # Training function
 def train(model, train_loader, val_loader, config, device):

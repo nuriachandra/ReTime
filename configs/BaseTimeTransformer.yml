@@ -1,7 +1,7 @@
 # Configuration file for training BaseTimeTransformer model
 
 # Data configuration
-data_path: "data/synthetic_data/time_series.npy"  # Path to the time series data
+data_path: "data/synthetic_data/constant_series1.npy"  # Path to the time series data
 normalize_data: true               # Whether to normalize the data
 train_ratio: 0.7                   # Ratio of data for training
 val_ratio: 0.15                    # Ratio of data for validation
