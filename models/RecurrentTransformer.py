@@ -1,10 +1,9 @@
-
 import numpy as np
 import torch
 import torch.nn as nn
 
-from models.modules import Block, LayerNorm, TimeTokenEmbedding
 from models.model_utils import CommonConfig
+from models.modules import Block, LayerNorm, TimeTokenEmbedding
 
 
 class RecurrentTransformer(nn.Module):
@@ -13,12 +12,10 @@ class RecurrentTransformer(nn.Module):
     Uses a single recurrent attention head
     Predicts horizon_len amount of consequtive time sequences
 
-    TODO make n_recurrences as a parameter that can be randomly assigned during the forward method
-
     This model is not currently capable of handling variable length input due to the fixed size output projection layer
     """
 
-    def __init__(self, config:CommonConfig):
+    def __init__(self, config: CommonConfig):
         super().__init__()
         self.config = config
         self.block_size = config.block_size
@@ -41,7 +38,6 @@ class RecurrentTransformer(nn.Module):
         """
         if r is None:
             r = self.rng.integers(1, self.max_recurrence)
-            print("r is", r)
 
         # x shape: [batch_size, seq_length]
         b, t = x.size()
@@ -54,17 +50,26 @@ class RecurrentTransformer(nn.Module):
         x_emb = self.input_embedding(x)  # [b, t, n_embd]
         pos_emb = self.pos_emb(pos)  # [t, n_embd]
 
-        x = self.drop(
-            x_emb + pos_emb
-        )  # Add position embeddings (broadcasting over batch dimension) as was done in GPT2
-        # Apply transformer blocks
-        for i in range(r):
+        input_emb = self.drop(
+            x_emb + pos_emb  # Add position embeddings (broadcasting over batch dimension) as was done in GPT2
+        )
+
+        x = self.attention_block(input_emb)
+        for i in range(r - 1):
+            # adding in input embeddings as in https://github.com/seal-rg/recurrent-pretraining/blob/main/recpre/model_dynamic.py
+            print("injection type", self.config.injection_type)
+            if self.config.injection_type is not None:
+                if self.config.injection_type == "add":
+                    x = x + input_emb
+                elif self.config.injection_type == "multiply":
+                    x = x * input_emb
+                else:
+                    raise ValueError("Invalid injection type")
+
             x = self.attention_block(x)
 
         x = self.ln_f(x)
-
         x = self.output_proj1(x)
         x = torch.squeeze(x)
         x = self.output_proj2(x)
-
         return x
