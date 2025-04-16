@@ -18,12 +18,12 @@ class CommonConfig:
     bias: bool = False  # True: bias in Linears and LayerNorms, like GPT-2. False: a bit better and faster
     max_recurrence: int = 20
 
-def create_model(config_file):
-    config = _construct_config(config_file)
+def create_model(cfg):
+    model_config = _construct_config(cfg)
     try:
-        model = getattr(models, config_file.model)(config)
+        model = getattr(models, cfg.model)(model_config)
     except AttributeError:
-        raise ValueError(f"Model {config_file.model} not found. Supported models: {models.supported_models}")
+        raise ValueError(f"Model {cfg.model} not found.")
     return model
 
 

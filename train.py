@@ -234,7 +234,7 @@ def main(cfg: DictConfig):
 
     # Create model
     print("Creating model...")
-    model = create_model(config_file=cfg)
+    model = create_model(cfg=cfg)
     model = model.to(device)
 
     # Print model summary

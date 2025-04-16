@@ -7,8 +7,3 @@ __all__ = [
     "BaseTimeTransformer",
     "RecurrentTransformer",
 ]
-
-supported_models = [
-    "BaseTimeTransformer",
-    "RecurrentTransformer",
-]
