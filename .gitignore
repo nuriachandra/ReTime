@@ -1,3 +1,7 @@
+experiments/synthetic/*
+.hydra
+train.log
+
 # PyTorch model files
 *.pth
 **/*.pth

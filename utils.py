@@ -54,12 +54,12 @@ class TimeSeriesDataset(Dataset):
         return x, y
 
 
-def load_data(config):
+def load_data(cfg):
     """
     Load and preprocess data according to configuration.
     This is a simple implementation - modify according to your data source.
     """
-    data_path = config.get("data_path", "data/time_series.npy")
+    data_path = cfg.get("data_path", "data/time_series.npy")
 
     # Check if data exists
     if not os.path.exists(data_path):
@@ -72,23 +72,23 @@ def load_data(config):
     if data.dtype != np.float32:
         data = data.astype(np.float32)
 
-    if config.get("normalize_data", True):  # TODO check that this is the correct normalization scheme
+    if cfg.get("normalize_data", True):  # TODO check that this is the correct normalization scheme
         # Simple min-max normalization
         data_min = data.min()
         data_max = data.max()
         data = (data - data_min) / (data_max - data_min)
 
         # Create output dir if it doesn't exist
-        os.makedirs(config.get("output_dir", "output"), exist_ok=True)
+        os.makedirs(cfg.get("output_dir", "output"), exist_ok=True)
 
         # Save normalization parameters for inference
         norm_params = {"data_min": float(data_min), "data_max": float(data_max)}
-        with open(os.path.join(config.get("output_dir", "output"), "norm_params.json"), "w") as f:
+        with open(os.path.join(cfg.get("output_dir", "output"), "norm_params.json"), "w") as f:
             json.dump(norm_params, f)
 
     # Split data into train, validation, and test sets
-    train_ratio = config.get("train_ratio", 0.7)
-    val_ratio = config.get("val_ratio", 0.15)
+    train_ratio = cfg.get("train_ratio", 0.7)
+    val_ratio = cfg.get("val_ratio", 0.15)
     # test_ratio = 1 - train_ratio - val_ratio
 
     train_size = int(len(data) * train_ratio)
@@ -102,9 +102,9 @@ def load_data(config):
 
 
 # Create data loaders
-def create_data_loaders(train_data, val_data, test_data, config):
-    batch_size = config.get("batch_size")
-    horizon_length = config.get("h")
+def create_data_loaders(train_data, val_data, test_data, cfg):
+    batch_size = cfg.get("batch_size")
+    horizon_length = cfg.get("h")
 
     # Create datasets
     train_dataset = TimeSeriesDataset(train_data, horizon_length)
@@ -119,33 +119,33 @@ def create_data_loaders(train_data, val_data, test_data, config):
     return train_loader, val_loader, test_loader
 
 
-def create_model(config_dict):
+def create_model(cfg):
     """
     Factory function to create a model based on configuration
     """
-    model_type = config_dict.get("model_type")
+    model_type = cfg.get("model_type")
 
     if model_type == "BaseTimeTransformer":
         model_config = BaseTimeTransformerConfig(
-            block_size=config_dict.get("block_size"),
-            n_layer=config_dict.get("n_layer"),
-            n_head=config_dict.get("n_head"),
-            n_embd=config_dict.get("n_embd"),
-            h=config_dict.get("h"),
-            dropout=config_dict.get("dropout"),
-            bias=config_dict.get("bias"),
+            block_size=cfg.get("block_size"),
+            n_layer=cfg.get("n_layer"),
+            n_head=cfg.get("n_head"),
+            n_embd=cfg.get("n_embd"),
+            h=cfg.get("h"),
+            dropout=cfg.get("dropout"),
+            bias=cfg.get("bias"),
         )
         return BaseTimeTransformer(model_config)
 
     elif model_type == "RecurrentTimeTransformer":
         model_config = RecurrentTimeTransformerConfig(
-            block_size=config_dict.get("block_size"),
-            max_recurrence=config_dict.get("max_recurrence"),
-            n_head=config_dict.get("n_head"),
-            n_embd=config_dict.get("n_embd"),
-            h=config_dict.get("h"),
-            dropout=config_dict.get("dropout"),
-            bias=config_dict.get("bias"),
+            block_size=cfg.get("block_size"),
+            max_recurrence=cfg.get("max_recurrence"),
+            n_head=cfg.get("n_head"),
+            n_embd=cfg.get("n_embd"),
+            h=cfg.get("h"),
+            dropout=cfg.get("dropout"),
+            bias=cfg.get("bias"),
         )
         return RecurrentTimeTransformer(model_config)
 
