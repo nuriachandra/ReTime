@@ -1,5 +1,6 @@
 import models 
 from dataclasses import dataclass
+from typing import Literal
 
 
 @dataclass
@@ -17,6 +18,7 @@ class CommonConfig:
     dropout: float = 0.0
     bias: bool = False  # True: bias in Linears and LayerNorms, like GPT-2. False: a bit better and faster
     max_recurrence: int = 20
+    injection_type: Literal[None, 'add', 'multiply'] = None
 
 def create_model(cfg):
     model_config = _construct_config(cfg)
@@ -37,5 +39,6 @@ def _construct_config(args):
         dropout=args.dropout,
         bias=args.bias,
         max_recurrence=args.max_recurrence,
+        injection_type=args.injection_type,
     )
     return config

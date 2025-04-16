@@ -11,12 +11,14 @@ val_ratio: 0.15                    # Ratio of data for validation
 model: 'BaseTimeTransformer'
 block_size: 104                    # Sequence length (input window size)
 n_layer: 3                         # Number of transformer layers. Currently not used by recurrent architectures
-max_recurrence: 10                 # Max number of recurrences when the number of recurrences is selected randomly. Only used by recurrent architectures.
 n_head: 4                          # Number of attention heads
 n_embd: 512                        # Embedding dimension
 h: 2                               # Horizon length (prediction steps)
+max_recurrence: 10                 # Max number of recurrences when the number of recurrences is selected randomly. Only used by recurrent architectures.
+injection_type: None               # Method for embedding injection
 dropout: 0                         # Dropout rate
 bias: true                         # Whether to use bias in Linear layers
+
 
 # Training configuration
 output_dir: "experiments/synthetic/BaseTimeTransformer1_constant_series1"               # Directory to save outputs
