@@ -14,7 +14,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from modules import Block, LayerNorm, TimeTokenEmbedding
+from nn.modules import Block, LayerNorm, TimeTokenEmbedding
 
 
 @dataclass

@@ -5,12 +5,6 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset
 
-from models import (
-    BaseTimeTransformer,
-    BaseTimeTransformerConfig,
-    RecurrentTimeTransformer,
-    RecurrentTimeTransformerConfig,
-)
 
 """
 This file contains modules for processing and loading time series data for use in transformer models 
@@ -59,7 +53,7 @@ def load_data(cfg):
     Load and preprocess data according to configuration.
     This is a simple implementation - modify according to your data source.
     """
-    data_path = cfg.get("data_path", "data/time_series.npy")
+    data_path = cfg.get("data_path")
 
     # Check if data exists
     if not os.path.exists(data_path):
@@ -118,36 +112,3 @@ def create_data_loaders(train_data, val_data, test_data, cfg):
 
     return train_loader, val_loader, test_loader
 
-
-def create_model(cfg):
-    """
-    Factory function to create a model based on configuration
-    """
-    model_type = cfg.get("model_type")
-
-    if model_type == "BaseTimeTransformer":
-        model_config = BaseTimeTransformerConfig(
-            block_size=cfg.get("block_size"),
-            n_layer=cfg.get("n_layer"),
-            n_head=cfg.get("n_head"),
-            n_embd=cfg.get("n_embd"),
-            h=cfg.get("h"),
-            dropout=cfg.get("dropout"),
-            bias=cfg.get("bias"),
-        )
-        return BaseTimeTransformer(model_config)
-
-    elif model_type == "RecurrentTimeTransformer":
-        model_config = RecurrentTimeTransformerConfig(
-            block_size=cfg.get("block_size"),
-            max_recurrence=cfg.get("max_recurrence"),
-            n_head=cfg.get("n_head"),
-            n_embd=cfg.get("n_embd"),
-            h=cfg.get("h"),
-            dropout=cfg.get("dropout"),
-            bias=cfg.get("bias"),
-        )
-        return RecurrentTimeTransformer(model_config)
-
-    else:
-        raise ValueError(f"Unknown model type: {model_type}")

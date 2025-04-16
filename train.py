@@ -18,7 +18,8 @@ from omegaconf import DictConfig, OmegaConf
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from tqdm import tqdm
 
-from utils import create_data_loaders, create_model, load_data
+from utils import create_data_loaders, load_data
+from models.model_utils import create_model
 
 
 def set_seed(seed):
@@ -204,7 +205,7 @@ def evaluate(model, test_loader, device):
     return {"test_loss": avg_test_loss, "horizon_mse": horizon_mse.tolist()}
 
 
-@hydra.main(config_path="configs", config_name="BaseTimeTransformer.yml")
+@hydra.main(config_path="configs", config_name="BaseConfig.yml")
 def main(cfg: DictConfig):
     output_dir = cfg.get("output_dir", "output")
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
