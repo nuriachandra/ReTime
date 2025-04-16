@@ -1,10 +1,9 @@
-
 import numpy as np
 import torch
 import torch.nn as nn
 
-from models.modules import Block, LayerNorm, TimeTokenEmbedding
 from models.model_utils import CommonConfig
+from models.modules import Block, LayerNorm, TimeTokenEmbedding
 
 
 class RecurrentTransformer(nn.Module):
@@ -16,7 +15,7 @@ class RecurrentTransformer(nn.Module):
     This model is not currently capable of handling variable length input due to the fixed size output projection layer
     """
 
-    def __init__(self, config:CommonConfig):
+    def __init__(self, config: CommonConfig):
         super().__init__()
         self.config = config
         self.block_size = config.block_size
@@ -52,14 +51,14 @@ class RecurrentTransformer(nn.Module):
         pos_emb = self.pos_emb(pos)  # [t, n_embd]
 
         input_emb = self.drop(
-            x_emb + pos_emb # Add position embeddings (broadcasting over batch dimension) as was done in GPT2
-        )  
-        
+            x_emb + pos_emb  # Add position embeddings (broadcasting over batch dimension) as was done in GPT2
+        )
+
         x = self.attention_block(input_emb)
-        for i in range(r-1):
-            # adding in input embeddings in the style of https://github.com/seal-rg/recurrent-pretraining/blob/main/recpre/model_dynamic.py 
-            print('injection type', self.config.injection_type)
-            if self.config.injection_type != None:
+        for i in range(r - 1):
+            # adding in input embeddings as in https://github.com/seal-rg/recurrent-pretraining/blob/main/recpre/model_dynamic.py
+            print("injection type", self.config.injection_type)
+            if self.config.injection_type is not None:
                 if self.config.injection_type == "add":
                     x = x + input_emb
                 elif self.config.injection_type == "multiply":
