@@ -1,6 +1,7 @@
-import models 
 from dataclasses import dataclass
 from typing import Literal
+
+import models
 
 
 @dataclass
