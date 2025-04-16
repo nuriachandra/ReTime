@@ -1,3 +1,3 @@
 ```shell
-py train.py ./configs/BaseTimeTransformer.yml
+py train.py epochs=1
 ```

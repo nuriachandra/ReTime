@@ -3,17 +3,18 @@ Training script for BaseTimeTransformer model.
 Usage: python train_transformer.py config.yaml
 """
 
-import argparse
 import datetime
 import json
 import os
 
+import hydra
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import yaml
+from omegaconf import DictConfig, OmegaConf
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from tqdm import tqdm
 
@@ -203,45 +204,36 @@ def evaluate(model, test_loader, device):
     return {"test_loss": avg_test_loss, "horizon_mse": horizon_mse.tolist()}
 
 
-def main():
-    # Parse command line arguments
-    parser = argparse.ArgumentParser(description="Train BaseTimeTransformer model")
-    parser.add_argument("config_path", type=str, help="Path to the configuration file")
-    args = parser.parse_args()
-
-    # Load configuration file
-    with open(args.config_path, "r") as f:
-        config_dict = yaml.safe_load(f)
-
-    # Set up output directory
-    output_dir = config_dict.get("output_dir", "output")
+@hydra.main(config_path="configs", config_name="BaseTimeTransformer.yml")
+def main(cfg: DictConfig):
+    output_dir = cfg.get("output_dir", "output")
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     output_dir = os.path.join(output_dir, f"run_{timestamp}")
     os.makedirs(output_dir, exist_ok=True)
-    config_dict["output_dir"] = output_dir
+    cfg["output_dir"] = output_dir
 
     # Save configuration
     with open(os.path.join(output_dir, "config.yaml"), "w") as f:
-        yaml.dump(config_dict, f)
+        yaml.dump(OmegaConf.to_container(cfg, resolve=True), f)
 
     # Set the seed for reproducibility
-    set_seed(config_dict.get("seed", 42))
+    set_seed(cfg.get("seed", 42))
 
     # Determine the device
-    device = torch.device("cuda" if torch.cuda.is_available() and config_dict.get("use_gpu", True) else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() and cfg.get("use_gpu", True) else "cpu")
     print(f"Using device: {device}")
 
     # Load and preprocess data
     print("Loading data...")
-    train_data, val_data, test_data = load_data(config_dict)
+    train_data, val_data, test_data = load_data(cfg)
 
     # Create data loaders
     print("Creating data loaders...")
-    train_loader, val_loader, test_loader = create_data_loaders(train_data, val_data, test_data, config_dict)
+    train_loader, val_loader, test_loader = create_data_loaders(train_data, val_data, test_data, cfg)
 
     # Create model
     print("Creating model...")
-    model = create_model(config_dict=config_dict)
+    model = create_model(cfg=cfg)
     model = model.to(device)
 
     # Print model summary
@@ -251,7 +243,7 @@ def main():
 
     # Train the model
     print("Starting training...")
-    _ = train(model, train_loader, val_loader, config_dict, device)
+    _ = train(model, train_loader, val_loader, cfg, device)
 
     # Load the best model for evaluation
     checkpoint = torch.load(os.path.join(output_dir, "best_model.pth"))
