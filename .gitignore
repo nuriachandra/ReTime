@@ -2,6 +2,9 @@ experiments/synthetic/*
 .hydra
 train.log
 
+# Synthetic data
+data/synthetic_data/*
+
 # PyTorch model files
 *.pth
 **/*.pth

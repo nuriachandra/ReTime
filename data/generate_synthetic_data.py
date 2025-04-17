@@ -301,6 +301,7 @@ def main():
     parser.add_argument("--horizon_length", type=int, default=24, help="Length of the prediction horizon")
     parser.add_argument("--stride", type=int, default=1, help="Stride between consecutive sequences")
     parser.add_argument("--noise", type=float, default=0.1, help="Noise level")
+    parser.add_argument("--frequency", type=float, default=0.01, help="Noise level")
     parser.add_argument("--output", type=str, default="data/time_series.npy", help="Output file path")
     parser.add_argument("--plot", action="store_true", help="Plot the generated time series")
 
@@ -328,7 +329,7 @@ def main():
     if args.pattern == "constant":
         series = generate_constant(time_series_length, value=5.0, noise_level=args.noise)
     elif args.pattern == "sine":
-        series = generate_sine_wave(time_series_length, amplitude=2.0, frequency=0.01, noise_level=args.noise)
+        series = generate_sine_wave(time_series_length, amplitude=2.0, frequency=args.frequency, noise_level=args.noise)
     elif args.pattern == "linear":
         series = generate_linear_trend(time_series_length, slope=0.01, noise_level=args.noise)
     elif args.pattern == "seasonal":
