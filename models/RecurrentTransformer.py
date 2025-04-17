@@ -57,7 +57,6 @@ class RecurrentTransformer(nn.Module):
         x = self.attention_block(input_emb)
         for i in range(r - 1):
             # adding in input embeddings as in https://github.com/seal-rg/recurrent-pretraining/blob/main/recpre/model_dynamic.py
-            print("injection type", self.config.injection_type)
             if self.config.injection_type is not None:
                 if self.config.injection_type == "add":
                     x = x + input_emb

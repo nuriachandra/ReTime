@@ -18,8 +18,8 @@ from omegaconf import DictConfig, OmegaConf
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from tqdm import tqdm
 
-from utils import create_data_loaders, load_data
 from models.model_utils import create_model
+from utils import create_data_loaders, load_data
 
 
 def set_seed(seed):
@@ -202,13 +202,22 @@ def evaluate(model, test_loader, device):
     for h, mse in enumerate(horizon_mse):
         print(f"Horizon {h + 1} MSE: {mse:.6f}")
 
-    return {"test_loss": avg_test_loss, "horizon_mse": horizon_mse.tolist()}
+    # Calculate MAE
+    mean_horizon_mae = np.mean(np.sum(np.abs(all_predictions - all_targets), axis=1))
+
+    return {
+        "test_loss": avg_test_loss,
+        "horizon_mse": horizon_mse.tolist(),
+        "mean_horizon_mae": mean_horizon_mae.tolist(),
+    }
 
 
 @hydra.main(config_path="configs", config_name="BaseConfig.yml")
 def main(cfg: DictConfig):
     output_dir = cfg.get("output_dir", "output")
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    experiment_name = cfg.model + "_" + os.path.splitext(os.path.basename(cfg.data_path))[0]
+    output_dir = os.path.join(output_dir, experiment_name)
     output_dir = os.path.join(output_dir, f"run_{timestamp}")
     os.makedirs(output_dir, exist_ok=True)
     cfg["output_dir"] = output_dir

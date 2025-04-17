@@ -15,13 +15,13 @@ n_head: 4                          # Number of attention heads
 n_embd: 512                        # Embedding dimension
 h: 2                               # Horizon length (prediction steps)
 max_recurrence: 10                 # Max number of recurrences when the number of recurrences is selected randomly. Only used by recurrent architectures.
-injection_type: None               # Method for embedding injection
+injection_type: ~                  # Method for embedding injection
 dropout: 0                         # Dropout rate
 bias: true                         # Whether to use bias in Linear layers
 
 
 # Training configuration
-output_dir: "experiments/synthetic/BaseTimeTransformer1_constant_series1"               # Directory to save outputs
+output_dir: "experiments/synthetic/"               # Directory to save outputs
 seed: 42                           # Random seed for reproducibility
 use_gpu: true                      # Whether to use GPU for training
 batch_size: 20                     # Batch size
