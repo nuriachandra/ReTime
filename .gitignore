@@ -2,6 +2,7 @@ experiments/synthetic/*
 .hydra
 train.log
 synthetic_data/*
+wandb/
 
 # Synthetic data
 data/synthetic_data/*

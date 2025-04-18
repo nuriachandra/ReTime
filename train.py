@@ -13,6 +13,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import wandb
 import yaml
 from omegaconf import DictConfig, OmegaConf
 from torch.optim.lr_scheduler import ReduceLROnPlateau
@@ -112,6 +113,10 @@ def train(model, train_loader, val_loader, config, device):
 
         avg_val_loss = val_loss / val_batches
         history["val_loss"].append(avg_val_loss)
+
+        if config.wandb.use:
+            wandb.log({"val_loss": avg_val_loss})
+            wandb.log({"train_loss": avg_train_loss})
 
         # Print epoch summary
         print(f"Epoch {epoch + 1}/{epochs} - Train Loss: {avg_train_loss:.6f}, Val Loss: {avg_val_loss:.6f}")
@@ -222,6 +227,10 @@ def main(cfg: DictConfig):
     os.makedirs(output_dir, exist_ok=True)
     cfg["output_dir"] = output_dir
 
+    if cfg.wandb.use:
+        wandb.init(project=cfg.wandb.proj)
+        wandb.config.update(OmegaConf.to_container(cfg, resolve=True))
+
     # Save configuration
     with open(os.path.join(output_dir, "config.yaml"), "w") as f:
         yaml.dump(OmegaConf.to_container(cfg, resolve=True), f)
@@ -266,6 +275,10 @@ def main(cfg: DictConfig):
     # Save evaluation results
     with open(os.path.join(output_dir, "evaluation_results.json"), "w") as f:
         json.dump(eval_results, f)
+
+    if cfg.wandb.use:
+        wandb.summary["test_loss"] = eval_results["test_loss"]
+        wandb.finish()
 
     print("Training and evaluation completed!")
     print(f"All outputs saved to {output_dir}")
