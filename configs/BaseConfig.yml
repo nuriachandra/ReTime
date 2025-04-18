@@ -1,7 +1,7 @@
 # Configuration file for training BaseTimeTransformer model
 
 # Data configuration
-data_path: "data/synthetic_data/constant_series1.npy"  # Path to the time series data
+data_path: "data/synthetic_data/test.npy"  # Path to the time series data
 normalize_data: false               # Whether to normalize the data
 train_ratio: 0.7                   # Ratio of data for training
 val_ratio: 0.15                    # Ratio of data for validation
@@ -9,7 +9,7 @@ val_ratio: 0.15                    # Ratio of data for validation
 
 # Model configuration
 model: 'BaseTimeTransformer'
-block_size: 104                    # Sequence length (input window size)
+block_size: 126                    # Sequence length (input window size)
 n_layer: 3                         # Number of transformer layers. Currently not used by recurrent architectures
 n_head: 4                          # Number of attention heads
 n_embd: 512                        # Embedding dimension
@@ -30,6 +30,10 @@ learning_rate: 0.0001              # Learning rate
 weight_decay: 0.0001               # Weight decay for regularization
 gradient_clip: 1.0                 # Maximum gradient norm
 patience: 10                       # Early stopping patience
+
+wandb:
+  use: false
+  proj: "ReTime"
 
 hydra:
   run:
