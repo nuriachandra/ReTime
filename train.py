@@ -90,6 +90,7 @@ def train(model, train_loader, val_loader, config, device):
 
         avg_train_loss = train_loss / train_batches
         history["train_loss"].append(avg_train_loss)
+        history["best_train_loss"].append(min(train_loss))
 
         # Validation phase
         model.eval()
@@ -293,7 +294,7 @@ def main(cfg: DictConfig):
         json.dump(eval_results, f)
 
     if cfg.wandb.use:
-        wandb.summary["train_loss"] = train_history["train_loss"]
+        wandb.summary["min_train_loss"] = train_history["best_train_loss"]
         wandb.summary["val_loss"] = eval_results["val_loss"]
         wandb.summary["val_best_mae"] = eval_results["mean_horizon_mae"]
         wandb.summary["val_best_r"] = eval_results["best_r"]
