@@ -278,7 +278,7 @@ def main(cfg: DictConfig):
 
     # Train the model
     print("Starting training...")
-    _ = train(model, train_loader, val_loader, cfg, device)
+    train_history = train(model, train_loader, val_loader, cfg, device)
 
     # Load the best model for evaluation
     checkpoint = torch.load(os.path.join(output_dir, "best_model.pth"))
@@ -293,8 +293,10 @@ def main(cfg: DictConfig):
         json.dump(eval_results, f)
 
     if cfg.wandb.use:
+        wandb.summary["train_loss"] = train_history["train_loss"]
         wandb.summary["val_loss"] = eval_results["val_loss"]
         wandb.summary["val_best_mae"] = eval_results["mean_horizon_mae"]
+        wandb.summary["val_best_r"] = eval_results["best_r"]
         wandb.finish()
 
     print("Training and evaluation completed!")
