@@ -2,8 +2,7 @@ import os
 from typing import List
 
 import numpy as np
-
-from data.data_parser import get_data_parser
+from data_parser import get_data_parser
 
 
 def generate_constant(length: int, value: float, **_) -> np.ndarray:
