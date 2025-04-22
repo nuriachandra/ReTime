@@ -252,7 +252,7 @@ def main(cfg: DictConfig):
         yaml.dump(OmegaConf.to_container(cfg, resolve=True), f)
 
     # Set the seed for reproducibility
-    set_seed(cfg.get("seed", 42))
+    # set_seed(cfg.get("seed", 42))
 
     # Determine the device
     device = torch.device("cuda" if torch.cuda.is_available() and cfg.get("use_gpu", True) else "cpu")
