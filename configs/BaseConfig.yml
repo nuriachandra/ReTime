@@ -22,7 +22,7 @@ bias: true                         # Whether to use bias in Linear layers
 
 # Training configuration
 output_dir: "experiments/synthetic/"               # Directory to save outputs
-seed: 42                           # Random seed for reproducibility
+set_seed: true                     # Random seed for reproducibility
 use_gpu: true                      # Whether to use GPU for training
 batch_size: 20                     # Batch size
 epochs: 10                         # Maximum number of epochs
