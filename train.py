@@ -243,8 +243,20 @@ def main(cfg: DictConfig):
     os.makedirs(output_dir, exist_ok=True)
     cfg["output_dir"] = output_dir
 
+    # if cfg.wandb.use:
+    #     wandb.init(project=cfg.wandb.proj)
+    #     wandb.config.update(OmegaConf.to_container(cfg, resolve=True))
+
     if cfg.wandb.use:
         wandb.init(project=cfg.wandb.proj)
+
+        # Add this block to override Hydra config with wandb sweep values
+        wandb_config = dict(wandb.config)
+        for key, value in wandb_config.items():
+            if key in cfg and key != "wandb":  # Avoid overriding the wandb config itself
+                cfg[key] = value
+
+        # Then update wandb config with the full configuration
         wandb.config.update(OmegaConf.to_container(cfg, resolve=True))
 
     # Save configuration
