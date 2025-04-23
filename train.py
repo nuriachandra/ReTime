@@ -185,17 +185,14 @@ def evaluate(model, test_loader, device):
 
         with torch.no_grad():
             for x_batch, y_batch in tqdm(test_loader, desc="Evaluating"):
-                # Move to device
                 x_batch, y_batch = x_batch.to(device), y_batch.to(device)
 
-                # Forward pass
                 if hasattr(model, "max_recurrence"):
                     y_pred = model(x_batch, r)
                 else:
                     y_pred = model(x_batch)
                 loss = criterion(y_pred, y_batch)
 
-                # Update metrics
                 test_loss += loss.item()
                 test_batches += 1
 
@@ -205,16 +202,13 @@ def evaluate(model, test_loader, device):
         avg_test_loss = test_loss / test_batches
         print(f"Recurrence {r}: Test Loss: {avg_test_loss:.6f}")
 
-        # Concatenate all predictions and targets
         all_predictions = np.concatenate(all_predictions, axis=0)
         all_targets = np.concatenate(all_targets, axis=0)
 
-        # Calculate MSE for each horizon step
         horizon_mse = np.mean((all_predictions - all_targets) ** 2, axis=0)
         for h, mse in enumerate(horizon_mse):
             print(f"Recurrence {r}: Horizon {h + 1} MSE: {mse:.6f}")
 
-        # Calculate MAE
         mean_horizon_mae = np.mean(np.sum(np.abs(all_predictions - all_targets), axis=1))
 
         print(f"Recurrence {r}: MAE {mean_horizon_mae:.6f}")
@@ -243,23 +237,15 @@ def main(cfg: DictConfig):
     os.makedirs(output_dir, exist_ok=True)
     cfg["output_dir"] = output_dir
 
-    # if cfg.wandb.use:
-    #     wandb.init(project=cfg.wandb.proj)
-    #     wandb.config.update(OmegaConf.to_container(cfg, resolve=True))
-
     if cfg.wandb.use:
         wandb.init(project=cfg.wandb.proj)
-
-        # Add this block to override Hydra config with wandb sweep values
         wandb_config = dict(wandb.config)
+        # override Hydra config with wandb values
         for key, value in wandb_config.items():
             if key in cfg and key != "wandb":  # Avoid overriding the wandb config itself
                 cfg[key] = value
-
-        # Then update wandb config with the full configuration
         wandb.config.update(OmegaConf.to_container(cfg, resolve=True))
 
-    # Save configuration
     with open(os.path.join(output_dir, "config.yaml"), "w") as f:
         yaml.dump(OmegaConf.to_container(cfg, resolve=True), f)
 
@@ -267,41 +253,32 @@ def main(cfg: DictConfig):
         print("setting seed")
         set_seed(42)
 
-    # Determine the device
     device = torch.device("cuda" if torch.cuda.is_available() and cfg.get("use_gpu", True) else "cpu")
     print(f"Using device: {device}")
 
-    # Load and preprocess data
     print("Loading data...")
     train_data, val_data, test_data = load_data(cfg)
 
-    # Create data loaders
     print("Creating data loaders...")
     train_loader, val_loader, test_loader = create_data_loaders(train_data, val_data, test_data, cfg)
 
-    # Create model
     print("Creating model...")
     model = create_model(cfg=cfg)
     model = model.to(device)
 
-    # Print model summary
     total_params = sum(p.numel() for p in model.parameters())
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Model created with {total_params:,} total parameters, {trainable_params:,} trainable")
 
-    # Train the model
     print("Starting training...")
     _ = train(model, train_loader, val_loader, cfg, device)
 
-    # Load the best model for evaluation
     checkpoint = torch.load(os.path.join(output_dir, "best_model.pth"))
     model.load_state_dict(checkpoint["model_state_dict"])
 
-    # Evaluate the model
     print("Evaluating model...")
     eval_results = evaluate(model, test_loader, device)
 
-    # Save evaluation results
     with open(os.path.join(output_dir, "evaluation_results.json"), "w") as f:
         json.dump(eval_results, f)
 
