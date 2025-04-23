@@ -174,46 +174,56 @@ def evaluate(model, test_loader, device):
     model.eval()
     criterion = nn.MSELoss()
 
-    test_loss = 0.0
-    test_batches = 0
-    all_predictions = []
-    all_targets = []
+    # iterate throught the possible number of recurrences and get the best results
+    best_mae = np.inf
+    for r in range(1, getattr(model, "max_recurrence", 1) + 1):
+        test_loss = 0.0
+        test_batches = 0
+        best_r = 0
+        all_predictions = []
+        all_targets = []
 
-    with torch.no_grad():
-        for x_batch, y_batch in tqdm(test_loader, desc="Evaluating"):
-            # Move to device
-            x_batch, y_batch = x_batch.to(device), y_batch.to(device)
+        with torch.no_grad():
+            for x_batch, y_batch in tqdm(test_loader, desc="Evaluating"):
+                x_batch, y_batch = x_batch.to(device), y_batch.to(device)
 
-            # Forward pass
-            y_pred = model(x_batch)
-            loss = criterion(y_pred, y_batch)
+                if hasattr(model, "max_recurrence"):
+                    y_pred = model(x_batch, r)
+                else:
+                    y_pred = model(x_batch)
+                loss = criterion(y_pred, y_batch)
 
-            # Update metrics
-            test_loss += loss.item()
-            test_batches += 1
+                test_loss += loss.item()
+                test_batches += 1
 
-            all_predictions.append(y_pred.cpu().numpy())
-            all_targets.append(y_batch.cpu().numpy())
+                all_predictions.append(y_pred.cpu().numpy())
+                all_targets.append(y_batch.cpu().numpy())
 
-    avg_test_loss = test_loss / test_batches
-    print(f"Test Loss: {avg_test_loss:.6f}")
+        avg_test_loss = test_loss / test_batches
+        print(f"Recurrence {r}: Test Loss: {avg_test_loss:.6f}")
 
-    # Concatenate all predictions and targets
-    all_predictions = np.concatenate(all_predictions, axis=0)
-    all_targets = np.concatenate(all_targets, axis=0)
+        all_predictions = np.concatenate(all_predictions, axis=0)
+        all_targets = np.concatenate(all_targets, axis=0)
 
-    # Calculate MSE for each horizon step
-    horizon_mse = np.mean((all_predictions - all_targets) ** 2, axis=0)
-    for h, mse in enumerate(horizon_mse):
-        print(f"Horizon {h + 1} MSE: {mse:.6f}")
+        horizon_mse = np.mean((all_predictions - all_targets) ** 2, axis=0)
+        for h, mse in enumerate(horizon_mse):
+            print(f"Recurrence {r}: Horizon {h + 1} MSE: {mse:.6f}")
 
-    # Calculate MAE
-    mean_horizon_mae = np.mean(np.sum(np.abs(all_predictions - all_targets), axis=1))
+        mean_horizon_mae = np.mean(np.sum(np.abs(all_predictions - all_targets), axis=1))
+
+        print(f"Recurrence {r}: MAE {mean_horizon_mae:.6f}")
+
+        if mean_horizon_mae < best_mae:
+            best_mae = mean_horizon_mae
+            best_test_loss = avg_test_loss
+            best_horizon_mse = horizon_mse
+            best_r = r
 
     return {
-        "test_loss": avg_test_loss,
-        "horizon_mse": horizon_mse.tolist(),
-        "mean_horizon_mae": mean_horizon_mae.tolist(),
+        "val_loss": best_test_loss,
+        "horizon_mse": best_horizon_mse.tolist(),
+        "mean_horizon_mae": float(best_mae),
+        "best_r": best_r,
     }
 
 
@@ -229,55 +239,53 @@ def main(cfg: DictConfig):
 
     if cfg.wandb.use:
         wandb.init(project=cfg.wandb.proj)
+        wandb_config = dict(wandb.config)
+        # override Hydra config with wandb values
+        for key, value in wandb_config.items():
+            if key in cfg and key != "wandb":  # Avoid overriding the wandb config itself
+                cfg[key] = value
         wandb.config.update(OmegaConf.to_container(cfg, resolve=True))
 
-    # Save configuration
     with open(os.path.join(output_dir, "config.yaml"), "w") as f:
         yaml.dump(OmegaConf.to_container(cfg, resolve=True), f)
 
-    # Set the seed for reproducibility
-    set_seed(cfg.get("seed", 42))
+    if cfg.set_seed:
+        print("setting seed")
+        set_seed(42)
 
-    # Determine the device
     device = torch.device("cuda" if torch.cuda.is_available() and cfg.get("use_gpu", True) else "cpu")
     print(f"Using device: {device}")
 
-    # Load and preprocess data
     print("Loading data...")
     train_data, val_data, test_data = load_data(cfg)
 
-    # Create data loaders
     print("Creating data loaders...")
     train_loader, val_loader, test_loader = create_data_loaders(train_data, val_data, test_data, cfg)
 
-    # Create model
     print("Creating model...")
     model = create_model(cfg=cfg)
     model = model.to(device)
 
-    # Print model summary
     total_params = sum(p.numel() for p in model.parameters())
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Model created with {total_params:,} total parameters, {trainable_params:,} trainable")
 
-    # Train the model
     print("Starting training...")
     _ = train(model, train_loader, val_loader, cfg, device)
 
-    # Load the best model for evaluation
     checkpoint = torch.load(os.path.join(output_dir, "best_model.pth"))
     model.load_state_dict(checkpoint["model_state_dict"])
 
-    # Evaluate the model
     print("Evaluating model...")
     eval_results = evaluate(model, test_loader, device)
 
-    # Save evaluation results
     with open(os.path.join(output_dir, "evaluation_results.json"), "w") as f:
         json.dump(eval_results, f)
 
     if cfg.wandb.use:
-        wandb.summary["test_loss"] = eval_results["test_loss"]
+        wandb.summary["val_loss"] = eval_results["val_loss"]
+        wandb.summary["val_best_mae"] = eval_results["mean_horizon_mae"]
+        wandb.summary["val_best_r"] = eval_results["best_r"]
         wandb.finish()
 
     print("Training and evaluation completed!")
