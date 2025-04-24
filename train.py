@@ -1,6 +1,6 @@
 import datetime
-import json
 import os
+import pickle
 from pathlib import Path
 
 import hydra
@@ -30,7 +30,7 @@ def train(model, train_loader, val_loader, config, device):
     optimizer = optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
     scheduler = ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=patience // 2, verbose=True)
     history = {"train_loss": [], "val_loss": [], "best_val_loss": float("inf"), "patience": patience, "epoch": -1}
-    early_stopping_counter = 0
+    early_counter = 0
 
     for epoch in range(epochs):
         model.train()
@@ -60,67 +60,45 @@ def train(model, train_loader, val_loader, config, device):
         avg_train_loss = train_loss / train_batches
         history["train_loss"].append(avg_train_loss)
 
-        avg_val_loss = eval_model(model, criterion, val_loader, history, device)
+        avg_val_loss, *_ = eval_model(model, criterion, val_loader, device)
         history["val_loss"].append(avg_val_loss)
 
         if config.wandb.use:
             wandb.log({"val_loss": avg_val_loss})
             wandb.log({"train_loss": avg_train_loss})
 
-        print(f"Epoch {epoch + 1}/{epochs} - Train Loss: {avg_train_loss:.6f}, Val Loss: {avg_val_loss:.6f}")
+        print(f"Epoch {epoch + 1}/{epochs} - Train Loss: {avg_train_loss:.3e}, Val Loss: {avg_val_loss:.3e}")
 
         scheduler.step(avg_val_loss)
 
-        early_stopping_counter = do_early_stopping_ckpt(model, optimizer, history, output_dir)
-        if early_stopping_counter >= patience:
+        early_counter = do_early_stopping_ckpt(model, optimizer, history, output_dir)
+        if early_counter >= patience:
             print(f"Early stopping triggered after {epoch + 1} epochs")
             break
 
-    json.dump(history, open(output_dir / "training_history.json", "w"))
+    pickle.dump(history, open(output_dir / "training_history.pkl", "wb"))
     plot_result(history, output_dir)
 
     return history
 
 
-def evaluate(model, test_loader, device):
-    model.eval()
+def eval_iterative(model, test_loader, device):
     criterion = nn.MSELoss()
 
     # iterate throught the possible number of recurrences and get the best results
     best_mae = np.inf
     best_r = 1
     for r in range(1, getattr(model, "max_recurrence", 1) + 1):
-        test_loss = 0.0
-        test_batches = 0
-        all_predictions = []
-        all_targets = []
+        avg_test_loss, all_preds, all_targets = eval_model(model, criterion, test_loader, device)
+        print(f"Recurrence {r}: Test Loss: {avg_test_loss:.3e}")
 
-        with torch.no_grad():
-            for x_batch, y_batch in tqdm(test_loader, desc="Evaluating"):
-                x_batch, y_batch = x_batch.to(device), y_batch.to(device)
-
-                y_pred = model(x_batch, r) if hasattr(model, "max_recurrence") else model(x_batch)
-                loss = criterion(y_pred, y_batch)
-
-                test_loss += loss.item()
-                test_batches += 1
-
-                all_predictions.append(y_pred.cpu().numpy())
-                all_targets.append(y_batch.cpu().numpy())
-
-        avg_test_loss = test_loss / test_batches
-        print(f"Recurrence {r}: Test Loss: {avg_test_loss:.6f}")
-
-        all_predictions = np.concatenate(all_predictions, axis=0)
-        all_targets = np.concatenate(all_targets, axis=0)
-
-        horizon_mse = np.mean((all_predictions - all_targets) ** 2, axis=0)
+        horizon_mse = np.mean((all_preds - all_targets) ** 2, axis=0)
         for h, mse in enumerate(horizon_mse):
-            print(f"Recurrence {r}: Horizon {h + 1} MSE: {mse:.6f}")
+            print(f"Recurrence {r}: Horizon {h + 1} MSE: {mse:.3e}")
 
-        mean_horizon_mae = np.mean(np.sum(np.abs(all_predictions - all_targets), axis=1))
+        mean_horizon_mae = np.mean(np.sum(np.abs(all_preds - all_targets), axis=1))
 
-        print(f"Recurrence {r}: MAE {mean_horizon_mae:.6f}")
+        print(f"Recurrence {r}: MAE {mean_horizon_mae:.3e}")
 
         if mean_horizon_mae < best_mae:
             best_mae = mean_horizon_mae
@@ -183,9 +161,8 @@ def main(cfg: DictConfig):
     model.load_state_dict(checkpoint["model_state_dict"])
 
     print("Evaluating model...")
-    eval_results = evaluate(model, test_loader, device)
-
-    json.dump(eval_results, open(output_dir / "evaluation_results.json", "w"))
+    eval_results = eval_iterative(model, test_loader, device)
+    pickle.dump(eval_results, open(output_dir / "eval_results.pkl", "wb"))
 
     if cfg.wandb.use:
         wandb.summary["val_loss"] = eval_results["val_loss"]

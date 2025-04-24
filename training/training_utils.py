@@ -29,10 +29,12 @@ def do_early_stopping_ckpt(model, optimizer, history, output_dir):
 
 
 @torch.no_grad
-def eval_model(model, criterion, val_loader, history, device):
+def eval_model(model, criterion, val_loader, device):
     model.eval()
     val_loss = 0.0
     val_batches = 0
+    all_preds = []
+    all_targets = []
 
     progress_bar = tqdm(val_loader, desc="[Valid]")
     for x_batch, y_batch in progress_bar:
@@ -43,10 +45,15 @@ def eval_model(model, criterion, val_loader, history, device):
 
         val_loss += loss.item()
         val_batches += 1
+        all_targets.append(y_batch.cpu().numpy())
+        all_preds.append(y_pred.cpu().numpy())
+
         progress_bar.set_postfix({"loss": val_loss / val_batches})
 
     avg_val_loss = val_loss / val_batches
-    return avg_val_loss
+    all_preds = np.concatenate(all_preds, axis=0)
+    all_targets = np.concatenate(all_targets, axis=0)
+    return avg_val_loss, all_preds, all_targets
 
 
 def plot_result(history, output_dir):
