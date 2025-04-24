@@ -2,9 +2,11 @@ import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt
 
-data = np.load("./synthetic_data/test.npy")
+# data = np.load("./synthetic_data/test.npy")
+data = np.load("./synthetic_data/ker.npy")
 
-caseS = [10, 20, 30, 40, 50]
+# caseS = [10, 20, 30, 40, 50]
+caseS = [1, 3, 5]
 # caseS = [i for i in range(100)]
 
 sns.set(style="whitegrid", font_scale=4)
