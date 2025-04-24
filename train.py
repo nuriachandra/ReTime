@@ -88,10 +88,10 @@ def evaluate(model, test_loader, device):
 
     # iterate throught the possible number of recurrences and get the best results
     best_mae = np.inf
+    best_r = 1
     for r in range(1, getattr(model, "max_recurrence", 1) + 1):
         test_loss = 0.0
         test_batches = 0
-        best_r = 0
         all_predictions = []
         all_targets = []
 
