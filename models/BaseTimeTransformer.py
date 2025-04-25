@@ -8,7 +8,6 @@ https://github.com/karpathy/nanoGPT/blob/master/model.py
 https://github.com/Nixtla/neuralforecast
 """
 
-import numpy as np
 import torch
 import torch.nn as nn
 
@@ -24,7 +23,7 @@ class BaseTimeTransformer(nn.Module):
     This model is not currently capable of handling variable length input due to the fixed size output projection layer
     """
 
-    def __init__(self, config:CommonConfig):
+    def __init__(self, config: CommonConfig):
         super().__init__()
         self.config = config
         self.block_size = config.block_size
@@ -41,6 +40,7 @@ class BaseTimeTransformer(nn.Module):
     def forward(self, x):
         # x shape: [batch_size, seq_length]
         b, t = x.size()
+        print("input size", b, t)
         x = torch.unsqueeze(x, -1)  # [batch_size, seq_length, 1]
         assert t <= self.block_size, f"Cannot forward sequence of length {t}, block size is only {self.block_size}"
 

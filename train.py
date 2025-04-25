@@ -143,7 +143,6 @@ def main(cfg: DictConfig):
     print("Loading data...")
     train_data, val_data, test_data = load_data(cfg)
 
-    print("Creating data loaders...")
     train_loader, val_loader, test_loader = create_data_loaders(train_data, val_data, test_data, cfg)
 
     print("Creating model...")
