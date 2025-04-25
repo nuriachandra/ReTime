@@ -30,7 +30,7 @@ def train(model, train_loader, val_loader, config, device):
     optimizer = optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
     scheduler = ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=patience // 2, verbose=True)
     history = {"train_loss": [], "val_loss": [], "best_val_loss": float("inf"), "patience": patience, "epoch": -1}
-    early_counter = 0
+    stopping_counter = 0
 
     for epoch in range(epochs):
         model.train()
@@ -71,8 +71,8 @@ def train(model, train_loader, val_loader, config, device):
 
         scheduler.step(avg_val_loss)
 
-        early_counter = do_early_stopping_ckpt(model, optimizer, history, output_dir)
-        if early_counter >= patience:
+        stopping_counter = do_early_stopping_ckpt(model, optimizer, history, output_dir, stopping_counter)
+        if stopping_counter >= patience:
             print(f"Early stopping triggered after {epoch + 1} epochs")
             break
 

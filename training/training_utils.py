@@ -4,7 +4,7 @@ import torch
 from tqdm import tqdm
 
 
-def do_early_stopping_ckpt(model, optimizer, history, output_dir):
+def do_early_stopping_ckpt(model, optimizer, history, output_dir, stopping_counter):
     epoch, avg_val_loss, patience = history["epoch"], history["val_loss"][-1], history["patience"]
     if avg_val_loss < history["best_val_loss"]:
         msg = f"Validation loss improved from {history['best_val_loss']:.6f} to "
@@ -21,11 +21,11 @@ def do_early_stopping_ckpt(model, optimizer, history, output_dir):
         }
         torch.save(checkpoint, output_dir / "best_model.pth")
 
-        early_stopping_counter = 0
+        stopping_counter = 0
     else:
-        early_stopping_counter += 1
-        print(f"Validation loss did not improve. Early stopping counter: {early_stopping_counter}/{patience}")
-    return early_stopping_counter
+        stopping_counter += 1
+        print(f"Validation loss did not improve. Early stopping counter: {stopping_counter}/{patience}")
+    return stopping_counter
 
 
 @torch.no_grad
