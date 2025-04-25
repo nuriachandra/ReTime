@@ -10,3 +10,5 @@ py -m pip install ruff
 py -m pip uninstall autopep8 -y
 py -m pip install python-lsp-ruff --no-cache-dir
 py -m pip install pre-commit
+
+py -m pip install datasets # huggingface datasets. Needed for downloading chronos
