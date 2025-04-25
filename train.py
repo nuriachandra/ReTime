@@ -140,12 +140,9 @@ def main(cfg: DictConfig):
     device = torch.device("cuda" if torch.cuda.is_available() and cfg.get("use_gpu", True) else "cpu")
     print(f"Using device: {device}")
 
-    print("Loading data...")
     train_data, val_data, test_data = load_data(cfg)
-
     train_loader, val_loader, test_loader = create_data_loaders(train_data, val_data, test_data, cfg)
 
-    print("Creating model...")
     model = create_model(cfg=cfg)
     model = model.to(device)
 
@@ -153,13 +150,11 @@ def main(cfg: DictConfig):
     trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Model created with {total_params:,} total parameters, {trainable_params:,} trainable")
 
-    print("Starting training...")
     _ = train(model, train_loader, val_loader, cfg, device)
 
     checkpoint = torch.load(output_dir / "best_model.pth")
     model.load_state_dict(checkpoint["model_state_dict"])
 
-    print("Evaluating model...")
     eval_results = eval_iterative(model, test_loader, device)
     pickle.dump(eval_results, open(output_dir / "eval_results.pkl", "wb"))
 
