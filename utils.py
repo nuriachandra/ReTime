@@ -49,7 +49,6 @@ def load_data(cfg):
         raise FileNotFoundError(f"Data file not found: {data_path}")
 
     data = np.load(data_path)
-    print("raw shape", data.shape)
     if data.dtype != np.float32:
         data = data.astype(np.float32)
 

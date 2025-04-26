@@ -40,7 +40,6 @@ class BaseTimeTransformer(nn.Module):
     def forward(self, x):
         # x shape: [batch_size, seq_length]
         b, t = x.size()
-        print("input size", b, t)
         x = torch.unsqueeze(x, -1)  # [batch_size, seq_length, 1]
         assert t <= self.block_size, f"Cannot forward sequence of length {t}, block size is only {self.block_size}"
 
