@@ -35,7 +35,6 @@ class TimeSeriesDataset(Dataset):
         chunk = self.tokens[idx]
         x = torch.from_numpy(chunk[: -self.h].astype(np.float32))
         y = torch.from_numpy(chunk[-self.h :].astype(np.float32))
-        print("x and y shape", x.size(), y.size())
         return x, y
 
 
@@ -50,6 +49,7 @@ def load_data(cfg):
         raise FileNotFoundError(f"Data file not found: {data_path}")
 
     data = np.load(data_path)
+    print("raw shape", data.shape)
     if data.dtype != np.float32:
         data = data.astype(np.float32)
 

@@ -15,7 +15,7 @@ py data/process_chronos_data.py --dataset monash_covid_deaths --outpath data/chr
 ```
 
 ```shell
-py train.py epochs=1 wandb.use=False model=BaseTimeTransformer data_path=data/chronos_datasets/test.npy output_dir=experiments/chronos_datasets block_size=5122 h=24
+py train.py epochs=1 wandb.use=False model=BaseTimeTransformer data_path=data/chronos_datasets/test.npy output_dir=experiments/chronos_datasets block_size=188 h=24
 ```
 
 

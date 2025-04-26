@@ -58,9 +58,8 @@ class BaseTimeTransformer(nn.Module):
             x = block(x)
 
         x = self.ln_f(x)
-
         x = self.output_proj1(x)
-        x = torch.squeeze(x)
+        x = torch.squeeze(x, dim=-1)
         x = self.output_proj2(x)
 
         return x

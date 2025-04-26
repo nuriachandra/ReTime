@@ -1,6 +1,6 @@
 import datetime
+import json
 import os
-import pickle
 from pathlib import Path
 
 import hydra
@@ -52,7 +52,6 @@ def train(model, train_loader, val_loader, config, device):
                 torch.nn.utils.clip_grad_norm_(model.parameters(), config.get("gradient_clip", 1.0))
 
             optimizer.step()
-
             train_loss += loss.item()
             train_batches += 1
             progress_bar.set_postfix({"loss": train_loss / train_batches})
@@ -76,7 +75,9 @@ def train(model, train_loader, val_loader, config, device):
             print(f"Early stopping triggered after {epoch + 1} epochs")
             break
 
-    pickle.dump(history, open(output_dir / "training_history.pkl", "wb"))
+    with open(output_dir / "training_history.json", "w") as f:
+        json.dump(history, f, indent=4)
+
     plot_result(history, output_dir)
 
     return history
@@ -141,6 +142,7 @@ def main(cfg: DictConfig):
     print(f"Using device: {device}")
 
     train_data, val_data, test_data = load_data(cfg)
+
     train_loader, val_loader, test_loader = create_data_loaders(train_data, val_data, test_data, cfg)
 
     model = create_model(cfg=cfg)
@@ -156,7 +158,8 @@ def main(cfg: DictConfig):
     model.load_state_dict(checkpoint["model_state_dict"])
 
     eval_results = eval_iterative(model, test_loader, device)
-    pickle.dump(eval_results, open(output_dir / "eval_results.pkl", "wb"))
+    with open(output_dir / "eval_results.json", "w") as f:
+        json.dump(eval_results, f, indent=4)
 
     if cfg.wandb.use:
         wandb.summary["val_loss"] = eval_results["val_loss"]
