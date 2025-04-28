@@ -1,4 +1,4 @@
-experiments/synthetic/*
+experiments/*
 .hydra
 train.log
 synthetic_data/*
@@ -6,6 +6,7 @@ wandb/
 
 # Synthetic data
 data/synthetic_data/*
+data/chronos_datasets/*
 
 # PyTorch model files
 *.pth
