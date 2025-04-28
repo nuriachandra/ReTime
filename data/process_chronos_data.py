@@ -8,10 +8,10 @@ import numpy as np
 # The largest datasets will need to be loaded to the disk explicity or streamed one page at a time
 
 
-def convert_chronos_to_retime_format(dataset_name: str, outpath: str):
+def convert_chronos_to_retime_format(dataset_name: str, outpath: str, data_column:str):
     ds = datasets.load_dataset("autogluon/chronos_datasets", dataset_name, split="train")
     ds.set_format("numpy")  # sequences returned as numpy arrays
-    data = ds["target"]
+    data = ds[data_column]
     np.save(outpath, data)
     print("saved data at", outpath)
 
@@ -25,11 +25,11 @@ def main():
         help="Name of the Chronos dataset to convert. See options at https://huggingface.co/datasets/autogluon/chronos_datasets/tree/main",
     )
     parser.add_argument("--outpath", type=str, required=True, help="Path to save the converted data")
+    parser.add_argument("--data_column", type=str, required=True, help="Name of the data column. e.x. 'target' or 'power_mw' ")
 
     args = parser.parse_args()
     os.makedirs(os.path.dirname(args.outpath), exist_ok=True)
-
-    convert_chronos_to_retime_format(args.dataset, args.outpath)
+    convert_chronos_to_retime_format(args.dataset, args.outpath, args.data_column)
 
 
 if __name__ == "__main__":

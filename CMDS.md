@@ -11,7 +11,7 @@ py data/generate_synthetic_data.py --pattern sine linear constant ar --n_seqs=10
 ```
 
 ```shell
-py data/process_chronos_data.py --dataset monash_covid_deaths --outpath data/chronos_datasets/test.npy
+py data/process_chronos_data.py --dataset monash_covid_deaths --outpath data/chronos_datasets/test.npy --data_column target
 ```
 
 ```shell

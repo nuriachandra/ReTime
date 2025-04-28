@@ -6,7 +6,7 @@ wandb/
 
 # Synthetic data
 data/synthetic_data/*
-data/chronos_data/*
+data/chronos_datasets/*
 
 # PyTorch model files
 *.pth
