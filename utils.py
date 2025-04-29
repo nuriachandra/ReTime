@@ -96,9 +96,9 @@ def create_data_loaders(train_data, val_data, test_data, cfg):
     batch_size = cfg.get("batch_size")
     horizon_length = cfg.get("h")
 
-    train_dataset = TimeSeriesDataset(train_data, horizon_length)
-    val_dataset = TimeSeriesDataset(val_data, horizon_length)
-    test_dataset = TimeSeriesDataset(test_data, horizon_length)
+    train_dataset = TimeSeriesDataset(train_data, horizon_length, cfg.get("block_size"))
+    val_dataset = TimeSeriesDataset(val_data, horizon_length, cfg.get("block_size"))
+    test_dataset = TimeSeriesDataset(test_data, horizon_length, cfg.get("block_size"))
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
