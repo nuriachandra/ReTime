@@ -31,8 +31,7 @@ class TimeSeriesDataset(Dataset):
         self.block_size = block_size
         self.random_block_selection = False
 
-        print("shape of tokens", self.tokens.shape)
-        if self.tokens.shape[-1] > block_size:
+        if self.tokens.shape[-1] > block_size + self.h:
             print("Dataloader set to randomly select block-size subsets of the time series")
             self.random_block_selection = True
 

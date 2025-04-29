@@ -15,6 +15,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from tqdm import tqdm
 
 from models.model_utils import create_model
+from training.functions import mae
 from training.training_utils import do_early_stopping_ckpt, eval_model, plot_result, set_seed
 from utils import create_data_loaders, load_data
 
@@ -97,7 +98,7 @@ def eval_iterative(model, test_loader, device):
         for h, mse in enumerate(horizon_mse):
             print(f"Recurrence {r}: Horizon {h + 1} MSE: {mse:.3e}")
 
-        mean_horizon_mae = np.mean(np.sum(np.abs(all_preds - all_targets), axis=1))
+        mean_horizon_mae = mae(all_preds, all_targets, reduction="mean")
 
         print(f"Recurrence {r}: MAE {mean_horizon_mae:.3e}")
 
