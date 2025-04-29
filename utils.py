@@ -20,6 +20,7 @@ class TimeSeriesDataset(Dataset):
         self,
         timeData: np.ndarray,  # shape: n x time series length. Currently only supports time series data of all the same length
         h: int,  # horizon length. The size of labels produced by the __getitem__ method
+        block_size: int,
     ):
         """
         Args:
@@ -27,14 +28,27 @@ class TimeSeriesDataset(Dataset):
         """
         self.tokens = timeData
         self.h = h
+        self.block_size = block_size
+        self.random_block_selection = False
+
+        print("shape of tokens", self.tokens.shape)
+        if self.tokens.shape[-1] > block_size:
+            print("Dataloader set to randomly select block-size subsets of the time series")
+            self.random_block_selection = True
 
     def __len__(self):
         return len(self.tokens)
 
     def __getitem__(self, idx):
         chunk = self.tokens[idx]
-        x = torch.from_numpy(chunk[: -self.h].astype(np.float32))
-        y = torch.from_numpy(chunk[-self.h :].astype(np.float32))
+        if self.random_block_selection:
+            x_start_idx = np.random.randint(0, len(chunk) - self.h - self.block_size)
+            x_end_idx = x_start_idx + self.block_size
+            x = torch.from_numpy(chunk[x_start_idx:x_end_idx].astype(np.float32))
+            y = torch.from_numpy(chunk[x_end_idx : x_end_idx + self.h].astype(np.float32))
+        else:
+            x = torch.from_numpy(chunk[: -self.h].astype(np.float32))
+            y = torch.from_numpy(chunk[-self.h :].astype(np.float32))
         return x, y
 
 
