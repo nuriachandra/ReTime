@@ -1,5 +1,6 @@
 import json
 import os
+import warnings
 
 import numpy as np
 import torch
@@ -32,7 +33,9 @@ class TimeSeriesDataset(Dataset):
         self.random_block_selection = False
 
         if self.tokens.shape[-1] > block_size + self.h:
-            print("Dataloader set to randomly select block-size subsets of the time series")
+            warnings.warn(
+                f"Dataloader set to randomly select block-size subsets of the time series. Data is shape {self.tokens.shape}"
+            )
             self.random_block_selection = True
 
     def __len__(self):
