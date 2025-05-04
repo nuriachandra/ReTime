@@ -1,6 +1,5 @@
 import json
 import os
-import warnings
 
 import numpy as np
 import torch
@@ -22,6 +21,7 @@ class TimeSeriesDataset(Dataset):
         timeData: np.ndarray,  # shape: n x time series length. Currently only supports time series data of all the same length
         h: int,  # horizon length. The size of labels produced by the __getitem__ method
         block_size: int,
+        padding: bool,
     ):
         """
         Args:
@@ -30,28 +30,32 @@ class TimeSeriesDataset(Dataset):
         self.tokens = timeData
         self.h = h
         self.block_size = block_size
-        self.random_block_selection = False
-
-        if self.tokens.shape[-1] > block_size + self.h:
-            warnings.warn(
-                f"Dataloader set to randomly select block-size subsets of the time series. Data is shape {self.tokens.shape}"
-            )
-            self.random_block_selection = True
+        self.padding = padding
 
     def __len__(self):
         return len(self.tokens)
 
     def __getitem__(self, idx):
         chunk = self.tokens[idx]
-        if self.random_block_selection:
-            x_start_idx = np.random.randint(0, len(chunk) - self.h - self.block_size)
-            x_end_idx = x_start_idx + self.block_size
-            x = torch.from_numpy(chunk[x_start_idx:x_end_idx].astype(np.float32))
-            y = torch.from_numpy(chunk[x_end_idx : x_end_idx + self.h].astype(np.float32))
+
+        if self.padding:
+            actual_length = len(chunk) - self.h
+            if actual_length < self.block_size:
+                mask = torch.zeros(self.block_size, dtype=torch.float32)
+                mask[:actual_length] = 1.0
+                padded_x = torch.zeros(self.block_size, dtype=torch.float32)
+                padded_x[:actual_length] = torch.from_numpy(chunk[: -self.h].astype(np.float32))
+                x = padded_x
+                padding_mask = mask
+            else:
+                x = torch.from_numpy(chunk[: -self.h].astype(np.float32))
+                padding_mask = torch.ones(len(x), dtype=torch.float32)
         else:
             x = torch.from_numpy(chunk[: -self.h].astype(np.float32))
-            y = torch.from_numpy(chunk[-self.h :].astype(np.float32))
-        return x, y
+            padding_mask = torch.ones(len(x), dtype=torch.float32)
+
+        y = torch.from_numpy(chunk[-self.h :].astype(np.float32))
+        return x, y, padding_mask
 
 
 def load_data(cfg):

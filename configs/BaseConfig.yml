@@ -18,7 +18,7 @@ max_recurrence: 10                 # Max number of recurrences when the number o
 injection_type: ~                  # Method for embedding injection
 dropout: 0                         # Dropout rate
 bias: true                         # Whether to use bias in Linear layers
-
+out_style: 'linear_proj'           # options: 'linear_proj', 'ext' for extension of the time dimension and take the last h
 
 # Training configuration
 output_dir: "experiments/synthetic/"               # Directory to save outputs

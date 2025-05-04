@@ -7,9 +7,10 @@ import models
 @dataclass
 class CommonConfig:
     """
-    Superclass for parameters needed by transformer models. 
+    Superclass for parameters needed by transformer models.
     Not all models will use all fields.
     """
+
     # TODO update the default hyperparameters
     block_size: int = 104  # the length of the input
     n_layer: int = 12
@@ -19,15 +20,8 @@ class CommonConfig:
     dropout: float = 0.0
     bias: bool = False  # True: bias in Linears and LayerNorms, like GPT-2. False: a bit better and faster
     max_recurrence: int = 20
-    injection_type: Literal[None, 'add', 'multiply'] = None
-
-def create_model(cfg):
-    model_config = _construct_config(cfg)
-    try:
-        model = getattr(models, cfg.model)(model_config)
-    except AttributeError:
-        raise ValueError(f"Model {cfg.model} not found.")
-    return model
+    injection_type: Literal[None, "add", "multiply"] = None
+    out_style: Literal["linear_proj", "ext"] = "linear_proj"
 
 
 def _construct_config(args):
@@ -41,5 +35,15 @@ def _construct_config(args):
         bias=args.bias,
         max_recurrence=args.max_recurrence,
         injection_type=args.injection_type,
+        out_style=args.out_style,
     )
     return config
+
+
+def create_model(cfg):
+    model_config = _construct_config(cfg)
+    try:
+        model = getattr(models, cfg.model)(model_config)
+    except AttributeError:
+        raise ValueError(f"Model {cfg.model} not found.")
+    return model

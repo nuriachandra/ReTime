@@ -21,9 +21,11 @@ class RecurrentTransformer(nn.Module):
         self.block_size = config.block_size
         self.max_recurrence = config.max_recurrence
         self.rng = np.random.default_rng()  # TODO add seed for reproducability
-
         self.input_embedding = TimeTokenEmbedding(c_in=1, hidden_size=config.n_embd)
-        self.pos_emb = nn.Embedding(config.block_size, config.n_embd)  # Learned positional embeddings (GPT-2 style)
+        if self.out_style == "ext":
+            self.pos_emb = nn.Embedding(config.block_size + config.h, config.n_embd)
+        else:
+            self.pos_emb = nn.Embedding(config.block_size, config.n_embd)  # Learned positional embeddings (GPT-2 style)
 
         self.drop = nn.Dropout(config.dropout)
         self.attention_block = Block(config)
