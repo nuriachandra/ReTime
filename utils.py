@@ -38,18 +38,22 @@ class TimeSeriesDataset(Dataset):
     def __getitem__(self, idx):
         chunk = self.tokens[idx]
 
-        if self.padding:
-            actual_length = len(chunk) - self.h
-            if actual_length < self.block_size:
-                mask = torch.zeros(self.block_size, dtype=torch.float32)
-                mask[:actual_length] = 1.0
-                padded_x = torch.zeros(self.block_size, dtype=torch.float32)
-                padded_x[:actual_length] = torch.from_numpy(chunk[: -self.h].astype(np.float32))
-                x = padded_x
-                padding_mask = mask
-            else:
-                x = torch.from_numpy(chunk[: -self.h].astype(np.float32))
-                padding_mask = torch.ones(len(x), dtype=torch.float32)
+        input_len = len(chunk) - self.h
+        if self.padding and input_len < self.block_size:
+            mask = torch.zeros(self.block_size, dtype=torch.float32)
+            mask[:input_len] = 1.0
+            padded_x = torch.zeros(self.block_size, dtype=torch.float32)
+            padded_x[:input_len] = torch.from_numpy(chunk[: -self.h].astype(np.float32))
+            x = padded_x
+            padding_mask = mask
+        elif not self.padding and input_len < self.block_size:
+            raise ValueError(
+                "Input length",
+                input_len,
+                "is smaller than block size",
+                self.block_size,
+                "Cannot reconsile this without padding",
+            )
         else:
             x = torch.from_numpy(chunk[: -self.h].astype(np.float32))
             padding_mask = torch.ones(len(x), dtype=torch.float32)
@@ -101,10 +105,11 @@ def load_data(cfg):
 def create_data_loaders(train_data, val_data, test_data, cfg):
     batch_size = cfg.get("batch_size")
     horizon_length = cfg.get("h")
+    padding = cfg.get("padding")
 
-    train_dataset = TimeSeriesDataset(train_data, horizon_length, cfg.get("block_size"))
-    val_dataset = TimeSeriesDataset(val_data, horizon_length, cfg.get("block_size"))
-    test_dataset = TimeSeriesDataset(test_data, horizon_length, cfg.get("block_size"))
+    train_dataset = TimeSeriesDataset(train_data, horizon_length, cfg.get("block_size"), padding)
+    val_dataset = TimeSeriesDataset(val_data, horizon_length, cfg.get("block_size"), padding)
+    test_dataset = TimeSeriesDataset(test_data, horizon_length, cfg.get("block_size"), padding)
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)

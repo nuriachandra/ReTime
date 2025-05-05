@@ -41,7 +41,8 @@ class CausalSelfAttention(nn.Module):
                 ),
             )
 
-    def forward(self, x):
+    def forward(self, x, padding_mask=None):
+        """padding_mask shape: (B, T) where 1 = valid token, 0 = padding"""
         B, T, C = x.size()  # batch size, sequence length, embedding dimensionality (n_embd)
 
         # calculate query, key, values for all heads in batch and move head forward to be the batch dim
@@ -53,13 +54,23 @@ class CausalSelfAttention(nn.Module):
         # causal self-attention; Self-attend: (B, nh, T, hs) x (B, nh, hs, T) -> (B, nh, T, T)
         if self.flash:
             # efficient attention using Flash Attention CUDA kernels
+            attention_mask = None
+            if padding_mask is not None:
+                attention_mask = padding_mask.view(B, 1, 1, T)  # Need to reshape to (B, 1, 1, T) for broadcasting
             y = torch.nn.functional.scaled_dot_product_attention(
-                q, k, v, attn_mask=None, dropout_p=self.dropout if self.training else 0, is_causal=True
+                q, k, v, attn_mask=attention_mask, dropout_p=self.dropout if self.training else 0, is_causal=True
             )
         else:
-            # manual implementation of attention
             att = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(k.size(-1)))
             att = att.masked_fill(self.bias[:, :, :T, :T] == 0, float("-inf"))
+            if padding_mask is not None:
+                pad_mask = padding_mask.view(B, 1, 1, T)
+                pad_mask = pad_mask.expand(
+                    -1, -1, T, -1
+                )  # Broadcast across the attention matrix TODO check that this works
+                # Apply the mask (0 = padding, so we want to mask these positions)
+                att = att.masked_fill(pad_mask == 0, float("-inf"))
+
             att = F.softmax(att, dim=-1)
             att = self.attn_dropout(att)
             y = att @ v  # (B, nh, T, T) x (B, nh, T, hs) -> (B, nh, T, hs)
@@ -94,8 +105,9 @@ class Block(nn.Module):
         self.ln_2 = LayerNorm(config.n_embd, bias=config.bias)
         self.mlp = MLP(config)
 
-    def forward(self, x):
-        x = x + self.attn(self.ln_1(x))
+    def forward(self, x, padding_mask=None):
+        norm_x = self.ln_1(x)
+        x = x + self.attn(norm_x, padding_mask)
         x = x + self.mlp(self.ln_2(x))
         return x
 
@@ -123,3 +135,9 @@ class TimeTokenEmbedding(nn.Module):
     def forward(self, x):
         x = self.tokenConv(x.permute(0, 2, 1)).transpose(1, 2)
         return x
+
+
+class OutputLayer(nn.Module):
+    """
+    based on model out_style, provides the appro
+    """

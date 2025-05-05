@@ -52,10 +52,9 @@ class BaseTimeTransformer(nn.Module):
         if self.out_style == "ext":
             x_ext = torch.zeros(size=(len(x), self.h, 1), device=x.device)
             x = torch.cat([x, x_ext], dim=1)
-
             if padding_mask is not None:
-                ext_mask = torch.zeros(b, self.h, device=device)
-                padding_mask = torch.cat([padding_mask, ext_mask], dim=1)
+                ext_mask = torch.ones(b, self.h, device=device)  # We don't need to mask the extension
+                padding_mask = torch.cat([ext_mask, padding_mask], dim=1)
 
         pos = torch.arange(0, x.size(1), dtype=torch.long, device=device)
         x_emb = self.input_embedding(x)  # [b, t, n_embd]
@@ -65,7 +64,7 @@ class BaseTimeTransformer(nn.Module):
             x_emb + pos_emb
         )  # Add position embeddings (broadcasting over batch dimension) as was done in GPT2
         for block in self.attention_blocks:
-            x = block(x)
+            x = block(x, padding_mask)
 
         x = self.ln_f(x)
 
@@ -74,9 +73,16 @@ class BaseTimeTransformer(nn.Module):
         x = torch.squeeze(x, dim=-1)
 
         if self.out_style == "linear_proj":
-            x = self.output_proj2(x)
+            x = x * padding_mask
+            x = self.output_proj2(x)  # TODO add padding here
         elif self.out_style == "ext":
-            x = x[:, -self.h :]
+            batch_mask = padding_mask[0, :]
+            padding_idx = torch.argwhere(batch_mask == 0)
+            if len(padding_idx) == 0:
+                x = x[:, -self.h :]
+            else:
+                first_padding_idx = padding_idx[0]
+                x = x[:, first_padding_idx - self.h : first_padding_idx]
         else:
             raise ValueError(f"Invalid out_style: '{self.out_style}'. Expected 'linear_proj' or 'ext'")
         return x

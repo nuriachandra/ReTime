@@ -40,11 +40,12 @@ def train(model, train_loader, val_loader, config, device):
         history["epoch"] = epoch
 
         progress_bar = tqdm(train_loader, desc=f"Epoch {epoch + 1}/{epochs} [Train]")
-        for x_batch, y_batch in progress_bar:
+        for x_batch, y_batch, pad_mask in progress_bar:
             x_batch, y_batch = x_batch.to(device), y_batch.to(device)
 
             optimizer.zero_grad()
-            y_pred = model(x_batch)
+            y_pred = model(x_batch, padding_mask=pad_mask)
+            print("y batch", y_batch.size(), "y pred", y_pred.size())
             loss = criterion(y_pred, y_batch)
 
             loss.backward()

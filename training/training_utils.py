@@ -37,10 +37,10 @@ def eval_model(model, criterion, val_loader, device):
     all_targets = []
 
     progress_bar = tqdm(val_loader, desc="[Valid]")
-    for x_batch, y_batch in progress_bar:
+    for x_batch, y_batch, pad_mask in progress_bar:
         x_batch, y_batch = x_batch.to(device), y_batch.to(device)
 
-        y_pred = model(x_batch)
+        y_pred = model(x_batch, padding_mask=pad_mask)
         loss = criterion(y_pred, y_batch)
 
         val_loss += loss.item()
