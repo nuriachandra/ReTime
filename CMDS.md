@@ -19,7 +19,7 @@ py data/process_chronos_data.py --dataset monash_covid_deaths --outpath data/chr
 py train.py epochs=1 wandb.use=False model=BaseTimeTransformer data_path=data/chronos_datasets/test.npy output_dir=experiments/chronos_datasets block_size=188 h=24
 ```
 
-Testing with padding
+Testing without and with padding
 ```shell
 py train.py epochs=1 wandb.use=False block_size=124 data_path=data/synthetic_data/test.npy padding=False out_style=ext
 

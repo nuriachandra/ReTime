@@ -135,9 +135,3 @@ class TimeTokenEmbedding(nn.Module):
     def forward(self, x):
         x = self.tokenConv(x.permute(0, 2, 1)).transpose(1, 2)
         return x
-
-
-class OutputLayer(nn.Module):
-    """
-    based on model out_style, provides the appro
-    """
