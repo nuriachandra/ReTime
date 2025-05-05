@@ -11,4 +11,10 @@ py -m pip uninstall autopep8 -y
 py -m pip install python-lsp-ruff --no-cache-dir
 py -m pip install pre-commit
 
+
+# To run kernel_synth.py
+py -m pip install gluonts
+py -m pip install joblib
+py -m pip install -U scikit-learn
+
 py -m pip install datasets # huggingface datasets. Needed for downloading chronos
