@@ -92,7 +92,7 @@ def eval_iterative(model, test_loader, device):
     best_mae = np.inf
     best_r = 1
     for r in range(1, getattr(model, "max_recurrence", 1) + 1):
-        avg_test_loss, all_preds, all_targets = eval_model(model, criterion, test_loader, device)
+        avg_test_loss, all_preds, all_targets = eval_model(model, criterion, test_loader, device, r)
         print(f"Recurrence {r}: Test Loss: {avg_test_loss:.3e}")
 
         horizon_mse = np.mean((all_preds - all_targets) ** 2, axis=0)
