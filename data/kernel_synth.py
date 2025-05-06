@@ -6,6 +6,7 @@
 
 import argparse
 import functools
+import os
 from typing import Optional
 
 import numpy as np
@@ -185,6 +186,7 @@ if __name__ == "__main__":
     parser.add_argument("--save_path", type=str, default="gp_synthetic_data/test.arrow")
     args = parser.parse_args()
     path = args.save_path
+    os.makedirs(os.path.dirname(path), exist_ok=True)
 
     generated_dataset = Parallel(n_jobs=-1)(
         delayed(generate_time_series)(max_kernels=args.max_kernels) for _ in tqdm(range(args.num_series))

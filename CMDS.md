@@ -35,6 +35,8 @@ py data/process_chronos_data.py --dataset monash_covid_deaths --outpath data/chr
 
 ```shell
 py kernel_synth.py --num-series 100 --save_path 'gp_synthetic_data/100_train'
+py data/kernel_synth.py --num-series 100000 --save_path 'data/gp_synthetic_data/100k_5-5-25'
+
 py train.py epochs=1 wandb.use=False block_size=624 data_path=data/gp_synthetic_data/100_train.npz padding=True out_style=ext
 ```
 
