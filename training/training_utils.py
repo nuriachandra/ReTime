@@ -40,7 +40,7 @@ def eval_model(model, criterion, val_loader, device, r=None):
     for x_batch, y_batch, pad_mask in progress_bar:
         x_batch, y_batch, pad_mask = x_batch.to(device), y_batch.to(device), pad_mask.to(device)
 
-        if model.hasattr("max_recurrence"):
+        if hasattr(model, "max_recurrence"):
             y_pred = model(x_batch, padding_mask=pad_mask, r=r)
         else:
             y_pred = model(x_batch, padding_mask=pad_mask)
