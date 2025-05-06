@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 # Modified by Nuria Alina Chandra from https://github.com/amazon-science/chronos-forecasting/blob/main/scripts/kernel-synth.py
-# Description of modifications: TODO add
 
 import argparse
 import functools
