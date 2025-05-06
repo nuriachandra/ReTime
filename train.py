@@ -41,7 +41,7 @@ def train(model, train_loader, val_loader, config, device):
 
         progress_bar = tqdm(train_loader, desc=f"Epoch {epoch + 1}/{epochs} [Train]")
         for x_batch, y_batch, pad_mask in progress_bar:
-            x_batch, y_batch = x_batch.to(device), y_batch.to(device)
+            x_batch, y_batch, pad_mask = x_batch.to(device), y_batch.to(device), pad_mask.to(device)
 
             optimizer.zero_grad()
             y_pred = model(x_batch, padding_mask=pad_mask)

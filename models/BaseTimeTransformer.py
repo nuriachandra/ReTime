@@ -48,8 +48,6 @@ class BaseTimeTransformer(nn.Module):
         x = torch.unsqueeze(x, -1)  # [batch_size, seq_length, 1]
         assert t <= self.block_size, f"Cannot forward sequence of length {t}, block size is only {self.block_size}"
         device = x.device
-        if padding_mask is not None:
-            padding_mask.to(device)
 
         if self.out_style == "ext":
             x_ext = torch.zeros(size=(len(x), self.h, 1), device=x.device)
