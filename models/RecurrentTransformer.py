@@ -47,10 +47,18 @@ class RecurrentTransformer(nn.Module):
         b, t = x.size()
         x = torch.unsqueeze(x, -1)  # [batch_size, seq_length, 1]
         assert t <= self.block_size, f"Cannot forward sequence of length {t}, block size is only {self.block_size}"
-
         device = x.device
-        pos = torch.arange(0, t, dtype=torch.long, device=device)
+        if padding_mask is not None:
+            padding_mask.to(device)
 
+        if self.out_style == "ext":
+            x_ext = torch.zeros(size=(len(x), self.h, 1), device=x.device)
+            x = torch.cat([x, x_ext], dim=1)
+            if padding_mask is not None:
+                ext_mask = torch.ones(b, self.h, device=device)  # We don't need to mask the extension
+                padding_mask = torch.cat([ext_mask, padding_mask], dim=1)
+
+        pos = torch.arange(0, x.size(1), dtype=torch.long, device=device)
         x_emb = self.input_embedding(x)  # [b, t, n_embd]
         pos_emb = self.pos_emb(pos)  # [t, n_embd]
 
