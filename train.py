@@ -45,7 +45,6 @@ def train(model, train_loader, val_loader, config, device):
 
             optimizer.zero_grad()
             y_pred = model(x_batch, padding_mask=pad_mask)
-            print("y batch", y_batch.size(), "y pred", y_pred.size())
             loss = criterion(y_pred, y_batch)
 
             loss.backward()

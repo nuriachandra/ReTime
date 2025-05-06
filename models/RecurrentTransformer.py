@@ -42,7 +42,6 @@ class RecurrentTransformer(nn.Module):
         """
         if r is None:
             r = self.rng.integers(1, self.max_recurrence)
-
         # x shape: [batch_size, seq_length]
         b, t = x.size()
         x = torch.unsqueeze(x, -1)  # [batch_size, seq_length, 1]
