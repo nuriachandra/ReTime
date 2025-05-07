@@ -31,6 +31,7 @@ class CausalSelfAttention(nn.Module):
         self.dropout = config.dropout
         # flash attention make GPU go brrrrr but support is only in PyTorch >= 2.0
         self.flash = hasattr(torch.nn.functional, "scaled_dot_product_attention")
+        self.flash = False
         if not self.flash:
             print("WARNING: using slow attention. Flash Attention requires PyTorch >= 2.0")
             # causal mask to ensure that attention is only applied to the left in the input sequence
@@ -70,6 +71,7 @@ class CausalSelfAttention(nn.Module):
                 )  # Broadcast across the attention matrix TODO check that this works
                 # Apply the mask (0 = padding, so we want to mask these positions)
                 att = att.masked_fill(pad_mask == 0, float("-inf"))
+                att = att.masked_fill(pad_mask.transpose(-1, -2) == 0, float("-inf"))
 
             att = F.softmax(att, dim=-1)
             att = self.attn_dropout(att)
