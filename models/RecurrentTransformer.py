@@ -63,7 +63,7 @@ class RecurrentTransformer(nn.Module):
             x_emb + pos_emb  # Add position embeddings (broadcasting over batch dimension) as was done in GPT2
         )
 
-        x = self.attention_block(input_emb)
+        x = self.attention_block(input_emb, padding_mask)
         for i in range(r - 1):
             # adding in input embeddings as in https://github.com/seal-rg/recurrent-pretraining/blob/main/recpre/model_dynamic.py
             if self.config.injection_type is not None:
@@ -74,7 +74,7 @@ class RecurrentTransformer(nn.Module):
                 else:
                     raise ValueError("Invalid injection type")
 
-            x = self.attention_block(x)
+            x = self.attention_block(x, padding_mask)
 
         x = self.ln_f(x)
         x = self.output_proj1(x)
