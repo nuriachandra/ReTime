@@ -13,7 +13,6 @@ This file contains modules for processing and loading time series data for use i
 class TimeSeriesDataset(Dataset):
     """
     Dataset for training transformer models on timeseries data
-    Currently only supports time series data of all the same length
     """
 
     def __init__(
@@ -71,8 +70,14 @@ def load_data(cfg):
 
     if not os.path.exists(data_path):
         raise FileNotFoundError(f"Data file not found: {data_path}")
+    if os.path.splitext(data_path)[1] == ".np":
+        data = np.load(data_path)
+    elif os.path.splitext(data_path)[1] == ".npz":
+        files = np.load(data_path)
+        data = files["data"]
+    else:
+        raise ValueError("Unsupported data type", os.path.splitext(data_path)[1])
 
-    data = np.load(data_path)
     if data.dtype != np.float32:
         data = data.astype(np.float32)
 
