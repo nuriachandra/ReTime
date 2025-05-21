@@ -15,6 +15,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from tqdm import tqdm
 
 from models.model_utils import create_model
+from training.functions import mae
 from training.training_utils import do_early_stopping_ckpt, eval_model, plot_result, set_seed
 from utils import create_data_loaders, load_data
 
@@ -39,11 +40,11 @@ def train(model, train_loader, val_loader, config, device):
         history["epoch"] = epoch
 
         progress_bar = tqdm(train_loader, desc=f"Epoch {epoch + 1}/{epochs} [Train]")
-        for x_batch, y_batch in progress_bar:
-            x_batch, y_batch = x_batch.to(device), y_batch.to(device)
+        for x_batch, y_batch, pad_mask in progress_bar:
+            x_batch, y_batch, pad_mask = x_batch.to(device), y_batch.to(device), pad_mask.to(device)
 
             optimizer.zero_grad()
-            y_pred = model(x_batch)
+            y_pred = model(x_batch, padding_mask=pad_mask)
             loss = criterion(y_pred, y_batch)
 
             loss.backward()
@@ -90,14 +91,14 @@ def eval_iterative(model, test_loader, device):
     best_mae = np.inf
     best_r = 1
     for r in range(1, getattr(model, "max_recurrence", 1) + 1):
-        avg_test_loss, all_preds, all_targets = eval_model(model, criterion, test_loader, device)
+        avg_test_loss, all_preds, all_targets = eval_model(model, criterion, test_loader, device, r)
         print(f"Recurrence {r}: Test Loss: {avg_test_loss:.3e}")
 
         horizon_mse = np.mean((all_preds - all_targets) ** 2, axis=0)
         for h, mse in enumerate(horizon_mse):
             print(f"Recurrence {r}: Horizon {h + 1} MSE: {mse:.3e}")
 
-        mean_horizon_mae = np.mean(np.sum(np.abs(all_preds - all_targets), axis=1))
+        mean_horizon_mae = mae(all_preds, all_targets, reduction="mean")
 
         print(f"Recurrence {r}: MAE {mean_horizon_mae:.3e}")
 
@@ -144,6 +145,14 @@ def main(cfg: DictConfig):
     train_data, val_data, test_data = load_data(cfg)
 
     train_loader, val_loader, test_loader = create_data_loaders(train_data, val_data, test_data, cfg)
+
+    # Handle the internal_t calculation
+    if cfg.internal_t is None:
+        if cfg.out_style == "ext":
+            cfg.internal_t = cfg.block_size + cfg.h
+        else:
+            cfg.internal_t = cfg.block_size
+    print("model internal representation of sequence length", cfg.internal_t)
 
     model = create_model(cfg=cfg)
     model = model.to(device)

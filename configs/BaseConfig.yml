@@ -18,7 +18,8 @@ max_recurrence: 10                 # Max number of recurrences when the number o
 injection_type: ~                  # Method for embedding injection
 dropout: 0                         # Dropout rate
 bias: true                         # Whether to use bias in Linear layers
-
+out_style: 'linear_proj'           # options: 'linear_proj', 'ext' for extension of the time dimension and take the last h
+internal_t: ~                      # The model's internal sequence length representation length. Will automatically be updated based on out_style
 
 # Training configuration
 output_dir: "experiments/synthetic/"               # Directory to save outputs
@@ -31,7 +32,7 @@ learning_rate: 0.0001              # Learning rate
 weight_decay: 0.0001               # Weight decay for regularization
 gradient_clip: 1.0                 # Maximum gradient norm
 patience: 10                       # Early stopping patience
-
+padding: False                     # Pad the input with zeros when smaller than block size
 wandb:
   use: false
   proj: "ReTime"

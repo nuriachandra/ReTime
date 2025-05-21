@@ -29,7 +29,7 @@ def do_early_stopping_ckpt(model, optimizer, history, output_dir, stopping_count
 
 
 @torch.no_grad
-def eval_model(model, criterion, val_loader, device):
+def eval_model(model, criterion, val_loader, device, r=None):
     model.eval()
     val_loss = 0.0
     val_batches = 0
@@ -37,10 +37,13 @@ def eval_model(model, criterion, val_loader, device):
     all_targets = []
 
     progress_bar = tqdm(val_loader, desc="[Valid]")
-    for x_batch, y_batch in progress_bar:
-        x_batch, y_batch = x_batch.to(device), y_batch.to(device)
+    for x_batch, y_batch, pad_mask in progress_bar:
+        x_batch, y_batch, pad_mask = x_batch.to(device), y_batch.to(device), pad_mask.to(device)
 
-        y_pred = model(x_batch)
+        if hasattr(model, "max_recurrence"):
+            y_pred = model(x_batch, padding_mask=pad_mask, r=r)
+        else:
+            y_pred = model(x_batch, padding_mask=pad_mask)
         loss = criterion(y_pred, y_batch)
 
         val_loss += loss.item()

@@ -23,9 +23,7 @@ class CausalSelfAttention(nn.Module):
         assert config.n_embd % config.n_head == 0
         # key, query, value projections for all heads, but in a batch
         self.c_attn = nn.Linear(config.n_embd, 3 * config.n_embd, bias=config.bias)
-        # output projection
         self.c_proj = nn.Linear(config.n_embd, config.n_embd, bias=config.bias)
-        # regularization
         self.attn_dropout = nn.Dropout(config.dropout)
         self.resid_dropout = nn.Dropout(config.dropout)
         self.n_head = config.n_head
@@ -33,17 +31,19 @@ class CausalSelfAttention(nn.Module):
         self.dropout = config.dropout
         # flash attention make GPU go brrrrr but support is only in PyTorch >= 2.0
         self.flash = hasattr(torch.nn.functional, "scaled_dot_product_attention")
+        self.flash = False
         if not self.flash:
             print("WARNING: using slow attention. Flash Attention requires PyTorch >= 2.0")
             # causal mask to ensure that attention is only applied to the left in the input sequence
             self.register_buffer(
                 "bias",
-                torch.tril(torch.ones(config.block_size, config.block_size)).view(
-                    1, 1, config.block_size, config.block_size
+                torch.tril(torch.ones(config.internal_t, config.internal_t)).view(  # TODO update this
+                    1, 1, config.internal_t, config.internal_t
                 ),
             )
 
-    def forward(self, x):
+    def forward(self, x, padding_mask):
+        """padding_mask shape: (B, T) where 1 = valid token, 0 = padding"""
         B, T, C = x.size()  # batch size, sequence length, embedding dimensionality (n_embd)
 
         # calculate query, key, values for all heads in batch and move head forward to be the batch dim
@@ -55,13 +55,22 @@ class CausalSelfAttention(nn.Module):
         # causal self-attention; Self-attend: (B, nh, T, hs) x (B, nh, hs, T) -> (B, nh, T, T)
         if self.flash:
             # efficient attention using Flash Attention CUDA kernels
+            attention_mask = None
+            if padding_mask is not None:
+                attention_mask = padding_mask.view(B, 1, 1, T)  # Need to reshape to (B, 1, 1, T) for broadcasting
             y = torch.nn.functional.scaled_dot_product_attention(
-                q, k, v, attn_mask=None, dropout_p=self.dropout if self.training else 0, is_causal=True
+                q, k, v, attn_mask=attention_mask, dropout_p=self.dropout if self.training else 0, is_causal=True
             )
         else:
-            # manual implementation of attention
             att = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(k.size(-1)))
             att = att.masked_fill(self.bias[:, :, :T, :T] == 0, float("-inf"))
+            if padding_mask is not None:
+                pad_mask = padding_mask.view(B, 1, 1, T)
+                pad_mask = pad_mask.expand(-1, -1, T, -1)  # Broadcast across the attention matrix
+                # Apply the mask (0 = padding, so we want to mask these positions)
+                att = att.masked_fill(pad_mask == 0, float("-inf"))
+                att = att.masked_fill(pad_mask.transpose(-1, -2) == 0, float("-inf"))
+
             att = F.softmax(att, dim=-1)
             att = self.attn_dropout(att)
             y = att @ v  # (B, nh, T, T) x (B, nh, T, hs) -> (B, nh, T, hs)
@@ -96,8 +105,9 @@ class Block(nn.Module):
         self.ln_2 = LayerNorm(config.n_embd, bias=config.bias)
         self.mlp = MLP(config)
 
-    def forward(self, x):
-        x = x + self.attn(self.ln_1(x))
+    def forward(self, x, padding_mask):
+        norm_x = self.ln_1(x)
+        x = x + self.attn(norm_x, padding_mask)
         x = x + self.mlp(self.ln_2(x))
         return x
 

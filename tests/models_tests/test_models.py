@@ -17,6 +17,7 @@ def test_CausalSelfAttention():
         dropout=0,
         bias=False,
         max_recurrence=3,
+        internal_t=N + H,
     )
     cfg = CommonConfig(**kwargs)
     model = CausalSelfAttention(cfg)
@@ -30,19 +31,13 @@ def test_CausalSelfAttention():
 def test_RecurrentTransformer():
     B, N, D, H = 3, 10, 8, 2
     kwargs = dict(
-        block_size=N,
-        n_layer=2,
-        n_head=2,
-        n_embd=D,
-        h=H,
-        dropout=0,
-        bias=False,
-        max_recurrence=3,
+        block_size=N, n_layer=2, n_head=2, n_embd=D, h=H, dropout=0, bias=False, max_recurrence=3, internal_t=N
     )
     for inj in [None, "add", "multiply"]:
         kwargs["injection_type"] = inj
         cfg = CommonConfig(**kwargs)
         model = RecurrentTransformer(cfg)
         x = torch.randn(B, N)
-        y = model(x)
+        padding_mask = (torch.ones((B, N))).long()
+        y = model(x, r=cfg.max_recurrence, padding_mask=padding_mask)
         assert y.shape == (B, H)
