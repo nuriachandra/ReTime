@@ -146,6 +146,14 @@ def main(cfg: DictConfig):
 
     train_loader, val_loader, test_loader = create_data_loaders(train_data, val_data, test_data, cfg)
 
+    # Handle the internal_t calculation
+    if cfg.internal_t is None:
+        if cfg.out_style == "ext":
+            cfg.internal_t = cfg.block_size + cfg.h
+        else:
+            cfg.internal_t = cfg.block_size
+    print("model internal representation of sequence length", cfg.internal_t)
+
     model = create_model(cfg=cfg)
     model = model.to(device)
 

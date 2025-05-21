@@ -24,10 +24,7 @@ class RecurrentTransformer(nn.Module):
         self.input_embedding = TimeTokenEmbedding(c_in=1, hidden_size=config.n_embd)
         self.out_style = config.out_style
         self.h = config.h
-        if self.out_style == "ext":
-            self.pos_emb = nn.Embedding(config.block_size + config.h, config.n_embd)
-        else:
-            self.pos_emb = nn.Embedding(config.block_size, config.n_embd)  # Learned positional embeddings (GPT-2 style)
+        self.pos_emb = nn.Embedding(config.internal_t, config.n_embd)
 
         self.drop = nn.Dropout(config.dropout)
         self.attention_block = Block(config)

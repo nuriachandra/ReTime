@@ -37,12 +37,12 @@ class CausalSelfAttention(nn.Module):
             # causal mask to ensure that attention is only applied to the left in the input sequence
             self.register_buffer(
                 "bias",
-                torch.tril(torch.ones(config.block_size, config.block_size)).view(
-                    1, 1, config.block_size, config.block_size
+                torch.tril(torch.ones(config.internal_t, config.internal_t)).view(  # TODO update this
+                    1, 1, config.internal_t, config.internal_t
                 ),
             )
 
-    def forward(self, x, padding_mask=None):
+    def forward(self, x, padding_mask):
         """padding_mask shape: (B, T) where 1 = valid token, 0 = padding"""
         B, T, C = x.size()  # batch size, sequence length, embedding dimensionality (n_embd)
 
@@ -66,9 +66,7 @@ class CausalSelfAttention(nn.Module):
             att = att.masked_fill(self.bias[:, :, :T, :T] == 0, float("-inf"))
             if padding_mask is not None:
                 pad_mask = padding_mask.view(B, 1, 1, T)
-                pad_mask = pad_mask.expand(
-                    -1, -1, T, -1
-                )  # Broadcast across the attention matrix TODO check that this works
+                pad_mask = pad_mask.expand(-1, -1, T, -1)  # Broadcast across the attention matrix
                 # Apply the mask (0 = padding, so we want to mask these positions)
                 att = att.masked_fill(pad_mask == 0, float("-inf"))
                 att = att.masked_fill(pad_mask.transpose(-1, -2) == 0, float("-inf"))
@@ -107,7 +105,7 @@ class Block(nn.Module):
         self.ln_2 = LayerNorm(config.n_embd, bias=config.bias)
         self.mlp = MLP(config)
 
-    def forward(self, x, padding_mask=None):
+    def forward(self, x, padding_mask):
         norm_x = self.ln_1(x)
         x = x + self.attn(norm_x, padding_mask)
         x = x + self.mlp(self.ln_2(x))

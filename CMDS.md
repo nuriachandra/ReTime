@@ -21,9 +21,16 @@ py train.py epochs=1 wandb.use=False model=BaseTimeTransformer data_path=data/ch
 
 Testing without and with padding
 ```shell
+# without padding
 py train.py epochs=1 wandb.use=False block_size=124 data_path=data/synthetic_data/test.npy padding=False out_style=ext
 
+# with padding
 py train.py epochs=1 wandb.use=False block_size=624 data_path=data/synthetic_data/test.npy padding=True out_style=ext
+```
+
+To test on Alina's mac [will delete after package issues fixed]
+```shell
+PYTHONPATH=/Users/alina/WilsonLab/ReTime pytest tests/models_tests/test_models.py
 ```
 
 

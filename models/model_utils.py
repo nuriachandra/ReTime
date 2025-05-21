@@ -12,7 +12,8 @@ class CommonConfig:
     """
 
     # TODO update the default hyperparameters
-    block_size: int = 104  # the length of the input
+    block_size: int
+    internal_t: int
     n_layer: int = 12
     n_head: int = 12
     n_embd: int = 768
@@ -27,6 +28,7 @@ class CommonConfig:
 def _construct_config(args):
     config = getattr(models, "CommonConfig")(
         block_size=args.block_size,
+        internal_t=args.internal_t,
         n_layer=args.n_layer,
         n_head=args.n_head,
         n_embd=args.n_embd,
